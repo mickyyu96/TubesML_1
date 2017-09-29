@@ -1,4 +1,6 @@
 import weka.core.Attribute;
+import weka.core.Capabilities;
+import weka.core.Capabilities.Capability;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -12,7 +14,22 @@ public class myID3 extends AbstractClassifier {
 	private double classValue;
 	
 	@Override
+	public Capabilities getCapabilities() {
+	    Capabilities result = super.getCapabilities();
+	    result.disableAll();
+
+	    result.enable(Capability.NOMINAL_ATTRIBUTES);
+	    result.enable(Capability.NOMINAL_CLASS);
+	    result.enable(Capability.MISSING_CLASS_VALUES);
+
+	    result.setMinimumNumberInstances(0);
+	    return result;
+	}
+	
+	@Override
 	public void buildClassifier(Instances data) throws Exception {
+		getCapabilities().testWithFail(data);
+		
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
 	    makeTree(data);
