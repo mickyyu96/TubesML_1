@@ -9,6 +9,7 @@ import java.util.Enumeration;
 public class treeC45 extends AbstractClassifier {
 	private treeC45 parent;
 	int indexattr = -1;
+	private double splitPoint = Double.MAX_VALUE; // for numeric attribute
 	private treeC45[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
@@ -17,6 +18,7 @@ public class treeC45 extends AbstractClassifier {
 	public treeC45(treeC45 tree) {
 		parent = tree.parent;
 		indexattr = tree.indexattr;
+		splitPoint = tree.splitPoint;
 		if (tree.nodeAttribute != null) {
 			child = new treeC45[tree.nodeAttribute.numValues()];
 			for (int i = 0; i<tree.nodeAttribute.numValues(); i++) {
@@ -42,19 +44,42 @@ public class treeC45 extends AbstractClassifier {
 		}
 		else {
 			nodeAttribute = data.attribute((int) maxInfoGainData[0]);
-			child = new treeC45[nodeAttribute.numValues()];
-			Instances[] childInstances = splitInstancesByAttribute(data, nodeAttribute);
-			for (int i=0; i<nodeAttribute.numValues(); i++) {
-				child[i] = new treeC45();
-				child[i].parent = this;
-				child[i].indexattr = i;
-				if (childInstances[i].numInstances() != 0) {
-					child[i].buildClassifier(childInstances[i]);
-				}
-				else {
-					child[i].nodeAttribute = null;
+			if(nodeAttribute.isNumeric()) {
+				child = new treeC45[2];
+
+	    		data.sort(nodeAttribute);
+	    		splitC45 childInstances = new splitC45();
+	    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
+				
+	    		if(childInstances.isSplit()) {
+	    			splitPoint = childInstances.splitPoint();
+	    			child[0] = new treeC45();
+	    			child[1] = new treeC45();
+	    			child[0].parent = this;
+	    			child[1].parent = this;
+					child[0].buildClassifier(childInstances.leftInstances());
+					child[1].buildClassifier(childInstances.rightInstances());
+	    		} else {
+	    			child[0] = new treeC45();
+					child[0].nodeAttribute = null;
+					child[0].classValue = getMostCommonClass(data);
+	    		}
+	    		
+			} else {
+				child = new treeC45[nodeAttribute.numValues()];
+				Instances[] childInstances = splitInstancesByAttribute(data, nodeAttribute);
+				for (int i=0; i<nodeAttribute.numValues(); i++) {
+					child[i] = new treeC45();
+					child[i].parent = this;
 					child[i].indexattr = i;
-					child[i].classValue = getMostCommonClass(data);
+					if (childInstances[i].numInstances() != 0) {
+						child[i].buildClassifier(childInstances[i]);
+					}
+					else {
+						child[i].nodeAttribute = null;
+						child[i].indexattr = i;
+						child[i].classValue = getMostCommonClass(data);
+					}
 				}
 			}
 		}
@@ -67,7 +92,14 @@ public class treeC45 extends AbstractClassifier {
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-			infoGain = countInfoGain(data, attr);
+	    	if (attr.isNumeric()) {
+	    		data.sort(attr.index());
+	    		splitC45 numAttr = new splitC45();
+	    		numAttr.handleNumericAttribute(attr.index(), data);
+	    		infoGain = numAttr.infoGain();
+	    	} else {
+	    		infoGain = countInfoGain(data, attr);
+	    	}
 			if (maxInfoGain < infoGain) {
 				maxInfoGain = infoGain;
 				maxInfoGainIdx = attr.index();
@@ -180,6 +212,13 @@ public class treeC45 extends AbstractClassifier {
 			return classValue;
 		} 
 		else {
+			if (nodeAttribute.isNumeric()) {
+				if((double) instance.value(nodeAttribute) <= splitPoint) {
+					child[0].classifyInstance(instance);
+				} else {
+					child[1].classifyInstance(instance);
+				}
+			}
 			return child[(int) instance.value(nodeAttribute)].classifyInstance(instance);
 		}
 	}
