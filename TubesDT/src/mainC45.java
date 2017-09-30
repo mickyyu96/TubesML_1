@@ -6,7 +6,7 @@ import weka.core.Instances;
 
 public class mainC45 {	
 	public static void main(String[] args) throws Exception {
-		String filename = "D:\\weather.numeric.arff";
+		String filename = "/Users/atikazzahra/Documents/Atikazzahra/ProgrammingRelated/TubesML_1/soybean.arff";
 		//filename = "D:\\soybean.arff";
 		BufferedReader reader = new BufferedReader(new FileReader(filename));
 		Instances data = new Instances(reader);
