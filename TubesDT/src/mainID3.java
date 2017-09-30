@@ -253,7 +253,7 @@ public class mainID3 {
 						}
 						System.out.println();
 					}
-				} while (pilihan2 != 12);
+				} while (pilihan2 != 15);
 			}
 			else if (pilihan == 2) {
 				System.out.print("Masukkan file model: ");

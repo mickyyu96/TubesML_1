@@ -6,10 +6,26 @@ import weka.classifiers.AbstractClassifier;
 
 import java.util.Enumeration;
 
-public class myID3 extends AbstractClassifier {
-	private myID3[] child;
+public class treeC45 extends AbstractClassifier {
+	private treeC45 parent;
+	int indexattr = -1;
+	private treeC45[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
+	
+	public treeC45() {}
+	public treeC45(treeC45 tree) {
+		parent = tree.parent;
+		indexattr = tree.indexattr;
+		if (tree.nodeAttribute != null) {
+			child = new treeC45[tree.nodeAttribute.numValues()];
+			for (int i = 0; i<tree.nodeAttribute.numValues(); i++) {
+				child[i] = new treeC45(tree.child[i]);
+			}
+		}
+		nodeAttribute = tree.nodeAttribute; 
+		classValue = tree.classValue; 
+	}
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
@@ -26,15 +42,18 @@ public class myID3 extends AbstractClassifier {
 		}
 		else {
 			nodeAttribute = data.attribute((int) maxInfoGainData[0]);
-			child = new myID3[nodeAttribute.numValues()];
+			child = new treeC45[nodeAttribute.numValues()];
 			Instances[] childInstances = splitInstancesByAttribute(data, nodeAttribute);
 			for (int i=0; i<nodeAttribute.numValues(); i++) {
-				child[i] = new myID3();
+				child[i] = new treeC45();
+				child[i].parent = this;
+				child[i].indexattr = i;
 				if (childInstances[i].numInstances() != 0) {
 					child[i].buildClassifier(childInstances[i]);
 				}
 				else {
 					child[i].nodeAttribute = null;
+					child[i].indexattr = i;
 					child[i].classValue = getMostCommonClass(data);
 				}
 			}
@@ -125,6 +144,34 @@ public class myID3 extends AbstractClassifier {
 			}
 		}
 		return mostCommonClass;
+	}
+	
+	public treeC45[] getChild() {
+		return child;
+	}
+	
+	public Attribute getNodeAttribute() {
+		return nodeAttribute;
+	}
+	
+	public void setNodeAttribute(Attribute attr) {
+		nodeAttribute = attr;
+	}
+	
+	public double getClassValue() {
+		return classValue;
+	}
+	
+	public void setChild(treeC45 tree, int i) {
+		child[i] = tree;
+	}
+	
+	public treeC45 getParent() {
+		return parent;
+	}
+	
+	public int getIndex() {
+		return indexattr;
 	}
 	
 	@Override

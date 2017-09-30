@@ -11,7 +11,7 @@ import java.util.Enumeration;
 import java.util.Random;
 
 public class myC45 extends AbstractClassifier {
-	private myID3 thisID3;
+	private treeC45 thisID3;
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
@@ -24,13 +24,13 @@ public class myC45 extends AbstractClassifier {
 		Instances train = new Instances(data, 0, trainSize);
 		Instances test = new Instances(data, trainSize, testSize);
 		
-		thisID3 = new myID3();
+		thisID3 = new treeC45();
 		thisID3.buildClassifier(train);
 	    thisID3 = pruneT(thisID3, test);
 	}
 	
-	private myID3 pruneT(myID3 tree, Instances test) throws Exception {
-		myID3 temptree = new myID3(tree);
+	private treeC45 pruneT(treeC45 tree, Instances test) throws Exception {
+		treeC45 temptree = new treeC45(tree);
 		
 		if (temptree.getNodeAttribute() != null) {
 			if (checkIfAllChildAreLabel(temptree)) {
@@ -51,11 +51,11 @@ public class myC45 extends AbstractClassifier {
 		return temptree;
 	}
 	
-	private boolean calculateAccuracy(myID3 prunedTree, Instances test) throws Exception{
+	private boolean calculateAccuracy(treeC45 prunedTree, Instances test) throws Exception{
 		//get complete tree
-		myID3 aftertree = new myID3(prunedTree);
+		treeC45 aftertree = new treeC45(prunedTree);
 		while(aftertree.getParent() != null) {
-			myID3 parenttree = new myID3(aftertree.getParent());
+			treeC45 parenttree = new treeC45(aftertree.getParent());
 			parenttree.setChild(aftertree, aftertree.getIndex());
 			aftertree = parenttree;
 		}
@@ -81,7 +81,7 @@ public class myC45 extends AbstractClassifier {
 		return false;
 	}
 	
-	private void printTree(myID3 tree) {
+	private void printTree(treeC45 tree) {
 		if (tree.getNodeAttribute() == null) {
 			System.out.println("["+tree.getClassValue()+"]");
 		}
@@ -94,7 +94,7 @@ public class myC45 extends AbstractClassifier {
 		}
 	}
 	
-	private boolean checkIfAllChildAreLabel(myID3 tree) {
+	private boolean checkIfAllChildAreLabel(treeC45 tree) {
 		for (int i=0; i<(tree.getNodeAttribute()).numValues(); i++){
 			if ((tree.getChild())[i].getNodeAttribute() != null) {
 				return false;
