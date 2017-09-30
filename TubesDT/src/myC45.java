@@ -8,6 +8,8 @@ import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class myC45 extends AbstractClassifier {
@@ -17,6 +19,7 @@ public class myC45 extends AbstractClassifier {
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
+	    data = handleMissingAttributeValue(data);
 	    data.randomize(new Random(1));
 	    //split data 
 	    int trainSize = (int) Math.round(data.numInstances() * 80 / 100);
@@ -27,6 +30,58 @@ public class myC45 extends AbstractClassifier {
 		thisID3 = new treeC45();
 		thisID3.buildClassifier(train);
 	    thisID3 = pruneT(thisID3, test);
+	}
+	
+	private Instances handleMissingAttributeValue(Instances data) throws Exception {
+		Instance instance;
+		
+		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
+		while (attrEnum.hasMoreElements()) {
+			Attribute attr = (Attribute) attrEnum.nextElement();
+	    	if (attr.isNumeric()) {
+    			data.sort(attr.index());
+	    		Enumeration<Instance> enu = data.enumerateInstances();
+	    		int total = 0;
+	    		
+	    		while (enu.hasMoreElements()) {
+	    			instance = enu.nextElement();
+	    			
+	    			if(instance.isMissing(attr.index())) {
+	    				instance.setValue(attr, data.instance(total/2).value(attr.index()));
+	    				continue;
+	    			}
+	    			total++;
+	    		}
+	    	} else {
+    			data.sort(attr.index());
+    			Map<Double, Integer> count = new HashMap<>();
+	    		Enumeration<Instance> enu = data.enumerateInstances();
+	    		
+	    		while (enu.hasMoreElements()) {
+	    			instance = enu.nextElement();
+	    			
+	    			if(instance.isMissing(attr.index())) {
+	    				Map.Entry<Double, Integer> maxEntry = null;
+	    				for (Map.Entry<Double, Integer> entry : count.entrySet()) {
+	    				  if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
+	    				    maxEntry = entry;
+	    				  }
+	    				}
+	    				instance.setValue(attr, maxEntry.getKey());
+	    				continue;
+	    			}
+	    			
+	    			double attrValue = instance.value(attr.index());
+	    			if(count.containsKey(attrValue)) {
+		    			count.put(attrValue, count.get(attrValue) + 1);	
+	    			} else {
+	    				count.put(attrValue, 1);
+	    			}
+	    		}
+	    	}
+		}
+		
+		return data;
 	}
 	
 	private treeC45 pruneT(treeC45 tree, Instances test) throws Exception {
