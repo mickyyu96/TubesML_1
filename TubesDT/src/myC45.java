@@ -74,7 +74,7 @@ public class myC45 extends AbstractClassifier {
 //		System.out.println();
 		
 		if (after_accuracy > before_accuracy) {
-			System.out.println("pruned");
+			//System.out.println("pruned");
 			thisID3 = aftertree;
 			return true;
 		}

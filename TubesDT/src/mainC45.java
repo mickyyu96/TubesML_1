@@ -6,7 +6,7 @@ import weka.core.Instances;
 
 public class mainC45 {	
 	public static void main(String[] args) throws Exception {
-		String filename = "/Users/atikazzahra/Documents/Atikazzahra/ProgrammingRelated/TubesML_1/soybean.arff";
+		String filename = "/Users/atikazzahra/Documents/Atikazzahra/ProgrammingRelated/TubesML_1/motor.arff";
 		//filename = "D:\\soybean.arff";
 		BufferedReader reader = new BufferedReader(new FileReader(filename));
 		Instances data = new Instances(reader);
@@ -15,7 +15,7 @@ public class mainC45 {
 		
 		System.out.println("C45");
 		
-		myC45 c45 = new myC45();
+		myC45RP c45 = new myC45RP();
 		c45.buildClassifier(data);
 		
 		Evaluation eval = new Evaluation(data);

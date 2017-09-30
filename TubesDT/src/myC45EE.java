@@ -14,7 +14,7 @@ public class myC45EE extends AbstractClassifier {
 	private double errorEstimate = 0;
 	
 	private double cErrorEstimate = 0.25;
-	private double zErrorEstimate = 0.69;
+	private double zErrorEstimate = 0.67;
 	
 	
 	@Override

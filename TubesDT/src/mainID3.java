@@ -160,9 +160,9 @@ public class mainID3 {
 				    System.out.println("      9. Melakukan pembelajaran dengan algoritma myC45 (10-fold cross validation)");
 					System.out.println("      10. Melakukan pembelajaran dengan algoritma myC45 (split test-training)");
 					System.out.println("      11. Melakukan pembelajaran dengan algoritma myC45 (full-training)");
-					System.out.println("      12. Melakukan pembelajaran dengan algoritma myC45EE (10-fold cross validation)");
-					System.out.println("      13. Melakukan pembelajaran dengan algoritma myC45EE (split test-training)");
-					System.out.println("      14. Melakukan pembelajaran dengan algoritma myC45EE (full-training)");
+					System.out.println("      12. Melakukan pembelajaran dengan algoritma myC45RP (10-fold cross validation)");
+					System.out.println("      13. Melakukan pembelajaran dengan algoritma myC45RP (split test-training)");
+					System.out.println("      14. Melakukan pembelajaran dengan algoritma myC45RP (full-training)");
 					System.out.println("      15. Back");
 					System.out.print("Masukkan pilihan: ");
 					pilihan2 = input.nextInt();
@@ -223,17 +223,17 @@ public class mainID3 {
 						cls = mainID3.FullTrainingSchema(data, cls);
 					}
 					else if (pilihan2 == 12) {
-						cls = new myC45EE();
+						cls = new myC45RP();
 						cls = mainID3.TenFoldsCrossValidation(data, cls);
 					}
 					else if (pilihan2 == 13) {
-						cls = new myC45EE();
+						cls = new myC45RP();
 						System.out.print("Masukkan persentase split: ");
 						int percent = input.nextInt();
 						cls = mainID3.SplitTest(data, percent, cls);
 					}
 					else if (pilihan2 == 14) {
-						cls = new myC45EE();
+						cls = new myC45RP();
 						cls = mainID3.FullTrainingSchema(data, cls);
 					}
 					else if (pilihan2 == 15) {

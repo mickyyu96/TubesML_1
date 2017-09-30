@@ -35,7 +35,7 @@ public class treeC45 extends AbstractClassifier {
 	}
 	
 	private void makeTree(Instances data) throws Exception {
-		double[] maxInfoGainData = getMaxInfoGainData(data);
+		double[] maxInfoGainData = getMaxGainRatioData(data);
 		classValue = getMostCommonClass(data);
 		if (maxInfoGainData[1] == 0.0) {
 			nodeAttribute = null;
@@ -53,7 +53,6 @@ public class treeC45 extends AbstractClassifier {
 				}
 				else {
 					child[i].nodeAttribute = null;
-					child[i].indexattr = i;
 					child[i].classValue = getMostCommonClass(data);
 				}
 			}
@@ -77,6 +76,42 @@ public class treeC45 extends AbstractClassifier {
 		return maxInfoGainData;
 	}
 	
+	private double[] getMaxGainRatioData(Instances data) throws Exception {
+		double gain;
+		double splitInformation;
+		double maxGainRatio = 0.0;
+		double maxGainRatioIdx = 0.0;
+		double avgGain = getAvgGainData(data);
+		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
+		while (attrEnum.hasMoreElements()) {
+			Attribute attr = (Attribute) attrEnum.nextElement();
+			gain = countInfoGain(data, attr);
+			if (gain >= avgGain) {
+				splitInformation = countSplitInformation(data, attr);
+				double gainRatio = gain/splitInformation;
+				if (gainRatio > maxGainRatio) {
+					maxGainRatio = gainRatio;
+					maxGainRatioIdx = attr.index();
+				}
+			}
+		}
+		double[] maxGainRatioData = {maxGainRatioIdx, maxGainRatio};
+		return maxGainRatioData;
+	}
+	
+	private double getAvgGainData(Instances data) throws Exception {
+		double infoGain;
+		double totalInfoGain = 0.0;
+		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
+		while (attrEnum.hasMoreElements()) {
+			Attribute attr = (Attribute) attrEnum.nextElement();
+			infoGain = countInfoGain(data, attr);
+			totalInfoGain += infoGain;
+		}
+		double avgInfoGainData = totalInfoGain/data.numAttributes();
+		return avgInfoGainData;
+	}
+	
 	private double countInfoGain(Instances data, Attribute attr) throws Exception {
 		double infoGain = countEntropy(data);
 		
@@ -92,6 +127,25 @@ public class treeC45 extends AbstractClassifier {
 		return infoGain;
 	}
 	
+	private double countSplitInformation(Instances data, Attribute attr) throws Exception{
+		double entropy = 0;
+		double prob = 0;
+		
+		Instances[] splitInstancesByAttr = new Instances[attr.numValues()];
+		splitInstancesByAttr = splitInstancesByAttribute(data, attr);
+		
+		for (int i=0; i<attr.numValues(); i++) {
+			if (splitInstancesByAttr[i].numInstances() != 0) {
+				
+				prob = splitInstancesByAttr[i].numInstances() / data.size();
+			    	if (prob != 0.0) {
+			    		entropy -= prob * Utils.log2(prob);
+			    	}
+			}
+		}
+		return entropy;
+	}
+	
 	private double countEntropy(Instances data) throws Exception {
 		int countClasses = data.numClasses();
 		int countRow = data.numInstances();
@@ -99,17 +153,17 @@ public class treeC45 extends AbstractClassifier {
 		double[] classCounts = new double[countClasses];
 	    Enumeration<Instance> instEnum = data.enumerateInstances();
 	    while (instEnum.hasMoreElements()) {
-	    	Instance inst = (Instance) instEnum.nextElement();
-	    	classCounts[(int) inst.classValue()] += 1.0;
+		    	Instance inst = (Instance) instEnum.nextElement();
+		    	classCounts[(int) inst.classValue()] += 1.0;
 	    }
 	    
 	    double entropy = 0;
 	    double prob = 0;
 	    for (int i=0; i<countClasses; i++) {
-	    	prob = classCounts[i] / countRow;
-	    	if (prob != 0.0) {
-	    		entropy -= prob * Utils.log2(prob);
-	    	}
+		    	prob = classCounts[i] / countRow;
+		    	if (prob != 0.0) {
+		    		entropy -= prob * Utils.log2(prob);
+		    	}
 	    }
 	    return entropy;
 	}
