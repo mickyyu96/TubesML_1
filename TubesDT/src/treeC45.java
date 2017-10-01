@@ -7,6 +7,7 @@ import weka.classifiers.AbstractClassifier;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
 public class treeC45 extends AbstractClassifier {
 	private treeC45 parent;
@@ -402,20 +403,60 @@ public class treeC45 extends AbstractClassifier {
 		return splitPoint;
 	}
 	
-	@Override
-	public double classifyInstance(Instance instance) throws Exception {
-		if (nodeAttribute == null) {
-			return classValue;
-		} 
-		else {
+	public Vector<Double> classifyInstanceVector(Instance instance) throws Exception {
+		Vector<Double> vClass = new Vector<Double>();
+		
+		if(nodeAttribute == null) {
+			vClass.add(classValue);
+		} else {		
 			if (nodeAttribute.isNumeric()) {
-				if((double) instance.value(nodeAttribute) <= splitPoint) {
-					child[0].classifyInstance(instance);
+				if(instance.isMissing(nodeAttribute)) {
+					vClass.addAll(child[0].classifyInstanceVector(instance));
+					vClass.addAll(child[1].classifyInstanceVector(instance));
 				} else {
-					child[1].classifyInstance(instance);
+					if((double) instance.value(nodeAttribute) <= splitPoint) {
+						vClass.addAll(child[0].classifyInstanceVector(instance));
+					} else {
+						vClass.addAll(child[1].classifyInstanceVector(instance));
+					}
+				}
+			} else {
+				if(instance.isMissing(nodeAttribute)) {
+					for(int i = 0; i < child.length; i++) {
+						vClass.addAll(child[i].classifyInstanceVector(instance));
+					}
+				} else {
+					vClass.addAll(child[(int) instance.value(nodeAttribute)].classifyInstanceVector(instance));
 				}
 			}
-			return child[(int) instance.value(nodeAttribute)].classifyInstance(instance);
 		}
+		return vClass;
+	}
+	
+	@Override
+	public double classifyInstance(Instance instance) throws Exception {
+		Vector<Double> vClass = new Vector<Double>();
+		vClass = classifyInstanceVector(instance);
+		
+		Map<Double, Integer> count = new HashMap<>();
+		for(int i = 0; i < vClass.size(); i++) {
+			Double value = vClass.get(i);
+			
+			if(count.containsKey(value)) {
+				count.put(value, count.get(value) + 1);	
+			} else {
+				count.put(value, 1);
+			}
+		}
+		
+		Map.Entry<Double, Integer> maxEntry = null;
+		for (Map.Entry<Double, Integer> entry : count.entrySet()) {
+			System.out.println(entry.getKey()+ " " + entry.getValue());
+		  if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
+		    maxEntry = entry;
+		  }
+		}
+		
+		return  maxEntry.getKey();
 	}
 }
