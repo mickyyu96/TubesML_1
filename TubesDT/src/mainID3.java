@@ -163,7 +163,10 @@ public class mainID3 {
 					System.out.println("      12. Melakukan pembelajaran dengan algoritma myC45RP (10-fold cross validation)");
 					System.out.println("      13. Melakukan pembelajaran dengan algoritma myC45RP (split test-training)");
 					System.out.println("      14. Melakukan pembelajaran dengan algoritma myC45RP (full-training)");
-					System.out.println("      15. Back");
+					System.out.println("      15. Melakukan pembelajaran dengan algoritma myC45EE (10-fold cross validation)");
+					System.out.println("      16. Melakukan pembelajaran dengan algoritma myC45EE (split test-training)");
+					System.out.println("      17. Melakukan pembelajaran dengan algoritma myC45EE (full-training)");
+					System.out.println("      18. Back");
 					System.out.print("Masukkan pilihan: ");
 					pilihan2 = input.nextInt();
 					
@@ -237,11 +240,26 @@ public class mainID3 {
 						cls = mainID3.FullTrainingSchema(data, cls);
 					}
 					else if (pilihan2 == 15) {
+						cls = new myC45EE();
+						cls = mainID3.TenFoldsCrossValidation(data, cls);
+					}
+					else if (pilihan2 == 16) {
+						cls = new myC45EE();
+						System.out.print("Masukkan persentase split: ");
+						int percent = input.nextInt();
+						cls = mainID3.SplitTest(data, percent, cls);
+					}
+					else if (pilihan2 == 17) {
+						cls = new myC45EE();
+						cls = mainID3.FullTrainingSchema(data, cls);
+					}
+					else if (pilihan2 == 18) {
 						System.out.println();
 					}
 					if (pilihan2 == 8 || pilihan2 == 3 || pilihan2 == 4 || pilihan2 == 5 || pilihan2 == 6 || 
 							pilihan2 == 7 || pilihan2 == 9 || pilihan2 == 10 || pilihan2 == 11 ||
-							pilihan == 12 || pilihan == 13 || pilihan == 14){
+							pilihan == 12 || pilihan == 13 || pilihan == 14 || pilihan == 15 || pilihan == 16 ||
+							pilihan == 17 ){
 						System.out.println("Save model pembelajaran? (y/n)");
 						System.out.print("Masukkan pilihan: ");
 						char answer = (char) System.in.read();
@@ -253,7 +271,7 @@ public class mainID3 {
 						}
 						System.out.println();
 					}
-				} while (pilihan2 != 15);
+				} while (pilihan2 != 18);
 			}
 			else if (pilihan == 2) {
 				System.out.print("Masukkan file model: ");

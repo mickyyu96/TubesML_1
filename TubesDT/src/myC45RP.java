@@ -24,10 +24,13 @@ public class myC45RP extends AbstractClassifier {
 		rules = new ArrayList<ruleC45>();
 		thisID3 = new treeC45();
 		thisID3.buildClassifier(data);
-		//printTree(thisID3);
+		System.out.println("print tree");
+		printTree(thisID3);
+		System.out.println("-----");
 		System.out.println();
 	    translateToRules(thisID3);
-	    pruneRules(data);
+	    pruneRules(data); 
+	    //printRules();
 	}
 	
 	private void translateToRules(treeC45 tree) throws Exception {
@@ -48,6 +51,9 @@ public class myC45RP extends AbstractClassifier {
 		while(beforetree.getParent() != null) {
 			treeC45 parenttree = new treeC45(beforetree.getParent());
 			newRule.addPrecond(parenttree.getNodeAttribute(), beforetree.getIndex());
+			if (parenttree.getNodeAttribute().isNumeric()) {
+				newRule.addSplitPrecond(parenttree.getNodeAttribute(), parenttree.getSplitPoint());
+			}
 			beforetree = parenttree;
 		}
 		rules.add(newRule);
