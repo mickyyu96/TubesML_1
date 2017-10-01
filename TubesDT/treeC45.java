@@ -5,8 +5,6 @@ import weka.core.Utils;
 import weka.classifiers.AbstractClassifier;
 
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 public class treeC45 extends AbstractClassifier {
 	private treeC45 parent;
@@ -15,12 +13,6 @@ public class treeC45 extends AbstractClassifier {
 	private treeC45[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
-	private Instances examplesNode;
-	private double errorEstimate;
-	private int attrSelectionMethod = 0;
-	
-	private double cErrorEstimate = 0.25;
-	private double zErrorEstimate = 0.67;
 	
 	public treeC45() {}
 	public treeC45(treeC45 tree) {
@@ -35,27 +27,17 @@ public class treeC45 extends AbstractClassifier {
 		}
 		nodeAttribute = tree.nodeAttribute; 
 		classValue = tree.classValue; 
-		if (tree.examplesNode != null) {
-			examplesNode = new Instances(tree.examplesNode);
-		}
-		errorEstimate = tree.errorEstimate;
 	}
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
-	    examplesNode = new Instances(data);
 	    makeTree(data);
 	}
 	
 	private void makeTree(Instances data) throws Exception {
-		double[] maxInfoGainData;
-		if (attrSelectionMethod == 0) {
-			maxInfoGainData = getMaxInfoGainData(data);
-		} else {
-			maxInfoGainData = getMaxGainRatioData(data);
-		}
+		double[] maxInfoGainData = getMaxGainRatioData(data);
 		classValue = getMostCommonClass(data);
 		if (maxInfoGainData[1] == 0.0) {
 			nodeAttribute = null;
@@ -69,21 +51,19 @@ public class treeC45 extends AbstractClassifier {
 	    		splitC45 childInstances = new splitC45();
 	    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
 				
-		    		if(childInstances.isSplit()) {
-		    			splitPoint = childInstances.splitPoint();
-		    			child[0] = new treeC45();
-		    			child[1] = new treeC45();
-		    			child[0].indexattr = 0;
-		    			child[1].indexattr = 1;
-		    			child[0].parent = this;
-		    			child[1].parent = this;
+	    		if(childInstances.isSplit()) {
+	    			splitPoint = childInstances.splitPoint();
+	    			child[0] = new treeC45();
+	    			child[1] = new treeC45();
+	    			child[0].parent = this;
+	    			child[1].parent = this;
 					child[0].buildClassifier(childInstances.leftInstances());
 					child[1].buildClassifier(childInstances.rightInstances());
-		    		} else {
-		    			child[0] = new treeC45();
+	    		} else {
+	    			child[0] = new treeC45();
 					child[0].nodeAttribute = null;
 					child[0].classValue = getMostCommonClass(data);
-		    		}
+	    		}
 	    		
 			} else {
 				child = new treeC45[nodeAttribute.numValues()];
@@ -103,43 +83,6 @@ public class treeC45 extends AbstractClassifier {
 				}
 			}
 		}
-		calculateErrorEstimateNode(data);
-		if (examplesNode == null) {
-	    		System.out.println(nodeAttribute);
-	    }
-	}
-	
-	private void calculateErrorEstimateNode(Instances data) {
-		double f = 0.0;
-		double N = data.size();
-		if (N!=0) {
-			Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
-			while (examplesNodeEnum.hasMoreElements()) {
-				Instance inst = (Instance) examplesNodeEnum.nextElement();
-				if ((int)inst.classValue() != classValue) {
-					f ++;
-				}
-			}
-			f = (double)f/N;
-			errorEstimate = getErrorEstimate(f, N);
-		}
-		System.out.println("--------------"+nodeAttribute+"--------------");
-		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
-		System.out.println("class Value: "+classValue);
-		System.out.println("---------------------------------------------");
-		System.out.println();
-	}
-	
-	private double getErrorEstimate(double f, double N) {
-		double temp0 = (f/N) - (Math.pow(f, 2)*1.0/N) + (Math.pow(zErrorEstimate, 2)*1.0/(4.0*Math.pow(N, 2)));
-		//System.out.println(temp0);
-		double temp1 = zErrorEstimate * Math.sqrt(temp0);
-		double temp2 = Math.pow(zErrorEstimate, 2)/(2.0*N);
-		double temp3 = temp1 + temp2 + f;
-		double divider = 1 + (Math.pow(zErrorEstimate, 2)/N);
-		
-		//System.out.println("eE("+f+","+N+")"+temp1+"+"+temp2+"+"+f+"/"+divider);
-		return temp3/divider;
 	}
 	
 	private double[] getMaxInfoGainData(Instances data) throws Exception {
@@ -149,14 +92,14 @@ public class treeC45 extends AbstractClassifier {
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-		    	if (attr.isNumeric()) {
-		    		data.sort(attr.index());
-		    		splitC45 numAttr = new splitC45();
-		    		numAttr.handleNumericAttribute(attr.index(), data);
-		    		infoGain = numAttr.infoGain();
-		    	} else {
-		    		infoGain = countInfoGain(data, attr);
-		    	}
+	    	if (attr.isNumeric()) {
+	    		data.sort(attr.index());
+	    		splitC45 numAttr = new splitC45();
+	    		numAttr.handleNumericAttribute(attr.index(), data);
+	    		infoGain = numAttr.infoGain();
+	    	} else {
+	    		infoGain = countInfoGain(data, attr);
+	    	}
 			if (maxInfoGain < infoGain) {
 				maxInfoGain = infoGain;
 				maxInfoGainIdx = attr.index();
@@ -178,24 +121,13 @@ public class treeC45 extends AbstractClassifier {
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-		 	if (attr.isNumeric()) {
-		    		data.sort(attr.index());
-		    		splitC45 numAttr = new splitC45();
-		    		numAttr.handleNumericAttribute(attr.index(), data);
-		    		gain = numAttr.infoGain();
-		    		double prob0 = numAttr.getPerBag()[0]/(double)data.size();
-		    		double prob1 = numAttr.getPerBag()[1]/(double)data.size();
-		    		splitInformation = - (prob0 * Utils.log2(prob0)) - (prob1 * Utils.log2(prob1));
-		    	} else {
-		    		gain = countInfoGain(data, attr);
-		    		splitInformation = countSplitInformation(data, attr);
-		    	}
 //			System.out.println("===="+attr);
-			
+			gain = countInfoGain(data, attr);
 //			System.out.println("gain:"+gain);
 //			System.out.println("split information:"+countSplitInformation(data, attr));
 //			System.out.println("gain ratio:"+((double)gain/countSplitInformation(data, attr)));
 			if (gain >= avgGain) {
+				splitInformation = countSplitInformation(data, attr);
 				double gainRatio = gain/splitInformation;	
 				if (gainRatio > maxGainRatio) {
 					maxGainRatio = gainRatio;
@@ -216,20 +148,13 @@ public class treeC45 extends AbstractClassifier {
 		//System.out.println(">>>>getAvgGainData");
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-			if (attr.isNumeric()) {
-		    		data.sort(attr.index());
-		    		splitC45 numAttr = new splitC45();
-		    		numAttr.handleNumericAttribute(attr.index(), data);
-		    		infoGain = numAttr.infoGain();
-			} else {
-				infoGain = countInfoGain(data, attr);
-			}
+			infoGain = countInfoGain(data, attr);
 			//System.out.println("gain "+attr+" : "+infoGain);
 			totalInfoGain += infoGain;
 			
 		}
 		double avgInfoGainData = totalInfoGain/((double)data.numAttributes()-1);
-		//System.out.println(totalInfoGain+" / "+((double)data.numAttributes()-1)+"="+avgInfoGainData);
+		System.out.println(totalInfoGain+" / "+((double)data.numAttributes()-1)+"="+avgInfoGainData);
 		return avgInfoGainData;
 	}
 	
@@ -294,50 +219,12 @@ public class treeC45 extends AbstractClassifier {
 			splitInstancesByAttr[i] = new Instances(data, data.numInstances());
 		}
 		
-		double mostCommonValue = getMostCommonValueInAttr(data, attr);
-		
 		Enumeration<Instance> instEnum = data.enumerateInstances();
 		while (instEnum.hasMoreElements()) {
 			Instance inst = (Instance) instEnum.nextElement();
-			splitInstancesByAttr[inst.isMissing(attr) ? (int) mostCommonValue : (int) inst.value(attr)].add(inst);
+			splitInstancesByAttr[(int) inst.value(attr)].add(inst);
 		}
 		return splitInstancesByAttr;
-	}
-	
-	
-	private Double getMostCommonValueInAttr(Instances data, Attribute attr) throws Exception {
-		Instance instance;
-		Double mostCommonValue = 0.0;
-		Map<Double, Integer> count = new HashMap<>();
-		Enumeration<Instance> enu = data.enumerateInstances();
-		
-		while (enu.hasMoreElements()) {
-			instance = enu.nextElement();
-			
-			if(instance.isMissing(attr.index())) {
-				continue;
-			}
-			
-			double attrValue = instance.value(attr.index());
-			if(count.containsKey(attrValue)) {
-    			count.put(attrValue, count.get(attrValue) + 1);	
-			} else {
-				count.put(attrValue, 1);
-			}
-		}
-		
-		Map.Entry<Double, Integer> maxEntry = null;
-		for (Map.Entry<Double, Integer> entry : count.entrySet()) {
-		  if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
-		    maxEntry = entry;
-		  }
-		}
-		
-		//count.forEach((k,v)-> System.out.println(k+", "+v));
-		
-		mostCommonValue = maxEntry == null ? 0.0 : maxEntry.getKey();
-		
-		return mostCommonValue;
 	}
 	
 	private double getMostCommonClass(Instances data) throws Exception {
@@ -384,22 +271,6 @@ public class treeC45 extends AbstractClassifier {
 	
 	public int getIndex() {
 		return indexattr;
-	}
-	
-	public Instances getExamplesNode() {
-		return examplesNode;
-	}
-	
-	public double getErrorEstimate() {
-		return errorEstimate;
-	}
-	
-	public void attributeSelectionMethod(int x){
-		attrSelectionMethod = x;
-	}
-	
-	public double getSplitPoint() {
-		return splitPoint;
 	}
 	
 	@Override
