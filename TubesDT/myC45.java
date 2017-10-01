@@ -19,7 +19,7 @@ public class myC45 extends AbstractClassifier {
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
-	    //data = handleMissingAttributeValue(data); we handle it when calculating infogain
+	    data = handleMissingAttributeValue(data);
 	    data.randomize(new Random(1));
 	    //split data 
 	    int trainSize = (int) Math.round(data.numInstances() * 80 / 100);
@@ -32,7 +32,6 @@ public class myC45 extends AbstractClassifier {
 	    thisID3 = pruneT(thisID3, test);
 	}
 	
-	// Not used, for future development
 	private Instances handleMissingAttributeValue(Instances data) throws Exception {
 		Instance instance;
 		

@@ -5,8 +5,6 @@ import weka.core.Utils;
 import weka.classifiers.AbstractClassifier;
 
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 public class treeC45 extends AbstractClassifier {
 	private treeC45 parent;
@@ -221,50 +219,12 @@ public class treeC45 extends AbstractClassifier {
 			splitInstancesByAttr[i] = new Instances(data, data.numInstances());
 		}
 		
-		double mostCommonValue = getMostCommonValueInAttr(data, attr);
-		
 		Enumeration<Instance> instEnum = data.enumerateInstances();
 		while (instEnum.hasMoreElements()) {
 			Instance inst = (Instance) instEnum.nextElement();
-			splitInstancesByAttr[inst.isMissing(attr) ? (int) mostCommonValue : (int) inst.value(attr)].add(inst);
+			splitInstancesByAttr[(int) inst.value(attr)].add(inst);
 		}
 		return splitInstancesByAttr;
-	}
-	
-	
-	private Double getMostCommonValueInAttr(Instances data, Attribute attr) throws Exception {
-		Instance instance;
-		Double mostCommonValue = 0.0;
-		Map<Double, Integer> count = new HashMap<>();
-		Enumeration<Instance> enu = data.enumerateInstances();
-		
-		while (enu.hasMoreElements()) {
-			instance = enu.nextElement();
-			
-			if(instance.isMissing(attr.index())) {
-				continue;
-			}
-			
-			double attrValue = instance.value(attr.index());
-			if(count.containsKey(attrValue)) {
-    			count.put(attrValue, count.get(attrValue) + 1);	
-			} else {
-				count.put(attrValue, 1);
-			}
-		}
-		
-		Map.Entry<Double, Integer> maxEntry = null;
-		for (Map.Entry<Double, Integer> entry : count.entrySet()) {
-		  if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
-		    maxEntry = entry;
-		  }
-		}
-		
-		//count.forEach((k,v)-> System.out.println(k+", "+v));
-		
-		mostCommonValue = maxEntry == null ? 0.0 : maxEntry.getKey();
-		
-		return mostCommonValue;
 	}
 	
 	private double getMostCommonClass(Instances data) throws Exception {
