@@ -1,0 +1,25 @@
+@RELATION motor
+
+@ATTRIBUTE price 		{expensive,cheap,medium}
+@ATTRIBUTE size 		{big,medium, small}
+@ATTRIBUTE country 		{france,germany,japan,USA}
+@ATTRIBUTE motor 		{diesel,gasoline}
+@ATTRIBUTE class 		{compact, sports, luxury}
+
+@DATA
+
+expensive, big, france, diesel, compact
+cheap, medium, germany, diesel, compact
+medium, medium, germany, gasoline, compact
+cheap, big, france, gasoline, compact
+cheap, big, france, gasoline, compact
+expensive, small, japan, gasoline, sports
+expensive, small, germany, gasoline, sports
+expensive, small, USA, gasoline, sports
+medium, small, japan, gasoline, sports
+medium, small, germany, gasoline, sports
+expensive, big, USA, gasoline, luxury
+expensive, big, USA, diesel, luxury
+expensive, big, france, gasoline, luxury
+expensive, big, germany, gasoline, luxury
+expensive, big, germany, diesel, luxury

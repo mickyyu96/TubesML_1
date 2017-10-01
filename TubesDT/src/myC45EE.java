@@ -1,6 +1,5 @@
+import java.lang.Math;
 import weka.core.Attribute;
-import weka.core.Capabilities;
-import weka.core.Capabilities.Capability;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -8,28 +7,18 @@ import weka.classifiers.AbstractClassifier;
 
 import java.util.Enumeration;
 
-public class myID3 extends AbstractClassifier {
-	private myID3[] child;
+public class myC45EE extends AbstractClassifier {
+	private myC45EE[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
+	private double errorEstimate = 0;
 	
-	@Override
-	public Capabilities getCapabilities() {
-	    Capabilities result = super.getCapabilities();
-	    result.disableAll();
-
-	    result.enable(Capability.NOMINAL_ATTRIBUTES);
-	    result.enable(Capability.NOMINAL_CLASS);
-	    result.enable(Capability.MISSING_CLASS_VALUES);
-
-	    result.setMinimumNumberInstances(0);
-	    return result;
-	}
+	private double cErrorEstimate = 0.25;
+	private double zErrorEstimate = 0.67;
+	
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
-		getCapabilities().testWithFail(data);
-		
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
 	    makeTree(data);
@@ -37,25 +26,83 @@ public class myID3 extends AbstractClassifier {
 	
 	private void makeTree(Instances data) throws Exception {
 		double[] maxInfoGainData = getMaxInfoGainData(data);
+		Instances[] childInstances = null;
 		classValue = getMostCommonClass(data);
 		if (maxInfoGainData[1] == 0.0) {
-			nodeAttribute = null;
+			child = null;
 		}
 		else {
 			nodeAttribute = data.attribute((int) maxInfoGainData[0]);
-			child = new myID3[nodeAttribute.numValues()];
-			Instances[] childInstances = splitInstancesByAttribute(data, nodeAttribute);
+			child = new myC45EE[nodeAttribute.numValues()];
+			childInstances = splitInstancesByAttribute(data, nodeAttribute);
 			for (int i=0; i<nodeAttribute.numValues(); i++) {
-				child[i] = new myID3();
+				child[i] = new myC45EE();
+				System.out.println("-------["+nodeAttribute+"-"+i+"]");
 				if (childInstances[i].numInstances() != 0) {
 					child[i].buildClassifier(childInstances[i]);
 				}
 				else {
+					System.out.println("-------[empty examples "+nodeAttribute+"-"+i+"]");
 					child[i].nodeAttribute = null;
 					child[i].classValue = getMostCommonClass(data);
 				}
 			}
+			
+			
 		}
+		
+		// C45 pruning
+		double N = data.size(); // Number of examples in node
+		double f = 0.0; //examples not in node's majority class
+		System.out.println("data size:"+data.size());
+		if (N != 0) {
+			Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
+			while (examplesNodeEnum.hasMoreElements()) {
+				Instance inst = (Instance) examplesNodeEnum.nextElement();
+				if ((int)inst.classValue() != classValue) {
+					f ++;
+				}
+			}
+			f = (double)f/N;
+			errorEstimate = getErrorEstimate(f, N);
+			
+			double errorEstimateChild = 0;
+			boolean allChildAreLabel = true;
+			if (childInstances != null) {
+				for (int i=0; i<nodeAttribute.numValues(); i++){
+					if (child[i].child != null) {
+						allChildAreLabel = false;
+						break;
+					} else {
+						int NChild = childInstances[i].size();// Number of examples in child node
+						errorEstimateChild += (NChild/(double)data.size())*child[i].errorEstimate;
+					}
+				}
+				if (allChildAreLabel) {
+					System.out.println("[error estimate]"+errorEstimate+" < [error estimate child]"+errorEstimateChild);
+					if (errorEstimate < errorEstimateChild) {
+						child = null;
+						System.out.println("leaf pruned");
+					}
+				}
+			}
+		}
+		
+		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
+		System.out.println("class Value: "+classValue);
+		System.out.println("---------------------------------------------");
+	}
+	
+	private double getErrorEstimate(double f, double N) {
+		double temp0 = (f/N) - (Math.pow(f, 2)*1.0/N) + (Math.pow(zErrorEstimate, 2)*1.0/(4.0*Math.pow(N, 2)));
+		//System.out.println(temp0);
+		double temp1 = zErrorEstimate * Math.sqrt(temp0);
+		double temp2 = Math.pow(zErrorEstimate, 2)/(2.0*N);
+		double temp3 = temp1 + temp2 + f;
+		double divider = 1 + (Math.pow(zErrorEstimate, 2)/N);
+		
+		//System.out.println("eE("+f+","+N+")"+temp1+"+"+temp2+"+"+f+"/"+divider);
+		return temp3/divider;
 	}
 	
 	private double[] getMaxInfoGainData(Instances data) throws Exception {
@@ -146,7 +193,7 @@ public class myID3 extends AbstractClassifier {
 	
 	@Override
 	public double classifyInstance(Instance instance) throws Exception {
-		if (nodeAttribute == null) {
+		if (child == null) {
 			return classValue;
 		} 
 		else {

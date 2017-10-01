@@ -63,6 +63,7 @@ public class mainID3 {
 	}
 	
 	public Classifier SplitTest(Instances data, int percent, Classifier cls) throws Exception {
+		data.randomize(new Random(1));
 		int trainSize = (int) Math.round(data.numInstances() * percent / 100);
 		int testSize = data.numInstances() - trainSize;
 		Instances train = new Instances(data, 0, trainSize);
@@ -156,7 +157,13 @@ public class mainID3 {
 				    System.out.println("      6. Melakukan pembelajaran dengan algoritma J48 (10-fold cross validation)");
 					System.out.println("      7. Melakukan pembelajaran dengan algoritma J48 (split test-training)");
 					System.out.println("      8. Melakukan pembelajaran dengan algoritma J48 (full-training)");
-					System.out.println("      9. Back");
+				    System.out.println("      9. Melakukan pembelajaran dengan algoritma myC45 (10-fold cross validation)");
+					System.out.println("      10. Melakukan pembelajaran dengan algoritma myC45 (split test-training)");
+					System.out.println("      11. Melakukan pembelajaran dengan algoritma myC45 (full-training)");
+					System.out.println("      12. Melakukan pembelajaran dengan algoritma myC45RP (10-fold cross validation)");
+					System.out.println("      13. Melakukan pembelajaran dengan algoritma myC45RP (split test-training)");
+					System.out.println("      14. Melakukan pembelajaran dengan algoritma myC45RP (full-training)");
+					System.out.println("      15. Back");
 					System.out.print("Masukkan pilihan: ");
 					pilihan2 = input.nextInt();
 					
@@ -202,9 +209,39 @@ public class mainID3 {
 						cls = mainID3.FullTrainingSchema(data, tree);
 					}
 					else if (pilihan2 == 9) {
+						cls = new myC45();
+						cls = mainID3.TenFoldsCrossValidation(data, cls);
+					}
+					else if (pilihan2 == 10) {
+						cls = new myC45();
+						System.out.print("Masukkan persentase split: ");
+						int percent = input.nextInt();
+						cls = mainID3.SplitTest(data, percent, cls);
+					}
+					else if (pilihan2 == 11) {
+						cls = new myC45();
+						cls = mainID3.FullTrainingSchema(data, cls);
+					}
+					else if (pilihan2 == 12) {
+						cls = new myC45RP();
+						cls = mainID3.TenFoldsCrossValidation(data, cls);
+					}
+					else if (pilihan2 == 13) {
+						cls = new myC45RP();
+						System.out.print("Masukkan persentase split: ");
+						int percent = input.nextInt();
+						cls = mainID3.SplitTest(data, percent, cls);
+					}
+					else if (pilihan2 == 14) {
+						cls = new myC45RP();
+						cls = mainID3.FullTrainingSchema(data, cls);
+					}
+					else if (pilihan2 == 15) {
 						System.out.println();
 					}
-					if (pilihan2 == 8 || pilihan2 == 3 || pilihan2 == 4 || pilihan2 == 5 || pilihan2 == 6 || pilihan2 == 7){
+					if (pilihan2 == 8 || pilihan2 == 3 || pilihan2 == 4 || pilihan2 == 5 || pilihan2 == 6 || 
+							pilihan2 == 7 || pilihan2 == 9 || pilihan2 == 10 || pilihan2 == 11 ||
+							pilihan == 12 || pilihan == 13 || pilihan == 14){
 						System.out.println("Save model pembelajaran? (y/n)");
 						System.out.print("Masukkan pilihan: ");
 						char answer = (char) System.in.read();
@@ -216,7 +253,7 @@ public class mainID3 {
 						}
 						System.out.println();
 					}
-				} while (pilihan2 != 9);
+				} while (pilihan2 != 15);
 			}
 			else if (pilihan == 2) {
 				System.out.print("Masukkan file model: ");
