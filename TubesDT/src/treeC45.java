@@ -13,6 +13,12 @@ public class treeC45 extends AbstractClassifier {
 	private treeC45[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
+	private Instances examplesNode;
+	private double errorEstimate;
+	private int attrSelectionMethod = 0;
+	
+	private double cErrorEstimate = 0.25;
+	private double zErrorEstimate = 0.67;
 	
 	public treeC45() {}
 	public treeC45(treeC45 tree) {
@@ -27,17 +33,27 @@ public class treeC45 extends AbstractClassifier {
 		}
 		nodeAttribute = tree.nodeAttribute; 
 		classValue = tree.classValue; 
+		if (tree.examplesNode != null) {
+			examplesNode = new Instances(tree.examplesNode);
+		}
+		errorEstimate = tree.errorEstimate;
 	}
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
+	    examplesNode = new Instances(data);
 	    makeTree(data);
 	}
 	
 	private void makeTree(Instances data) throws Exception {
-		double[] maxInfoGainData = getMaxGainRatioData(data);
+		double[] maxInfoGainData;
+		if (attrSelectionMethod == 0) {
+			maxInfoGainData = getMaxInfoGainData(data);
+		} else {
+			maxInfoGainData = getMaxGainRatioData(data);
+		}
 		classValue = getMostCommonClass(data);
 		if (maxInfoGainData[1] == 0.0) {
 			nodeAttribute = null;
@@ -85,6 +101,43 @@ public class treeC45 extends AbstractClassifier {
 				}
 			}
 		}
+		calculateErrorEstimateNode(data);
+		if (examplesNode == null) {
+	    		System.out.println(nodeAttribute);
+	    }
+	}
+	
+	private void calculateErrorEstimateNode(Instances data) {
+		double f = 0.0;
+		double N = data.size();
+		if (N!=0) {
+			Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
+			while (examplesNodeEnum.hasMoreElements()) {
+				Instance inst = (Instance) examplesNodeEnum.nextElement();
+				if ((int)inst.classValue() != classValue) {
+					f ++;
+				}
+			}
+			f = (double)f/N;
+			errorEstimate = getErrorEstimate(f, N);
+		}
+		System.out.println("--------------"+nodeAttribute+"--------------");
+		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
+		System.out.println("class Value: "+classValue);
+		System.out.println("---------------------------------------------");
+		System.out.println();
+	}
+	
+	private double getErrorEstimate(double f, double N) {
+		double temp0 = (f/N) - (Math.pow(f, 2)*1.0/N) + (Math.pow(zErrorEstimate, 2)*1.0/(4.0*Math.pow(N, 2)));
+		//System.out.println(temp0);
+		double temp1 = zErrorEstimate * Math.sqrt(temp0);
+		double temp2 = Math.pow(zErrorEstimate, 2)/(2.0*N);
+		double temp3 = temp1 + temp2 + f;
+		double divider = 1 + (Math.pow(zErrorEstimate, 2)/N);
+		
+		//System.out.println("eE("+f+","+N+")"+temp1+"+"+temp2+"+"+f+"/"+divider);
+		return temp3/divider;
 	}
 	
 	private double[] getMaxInfoGainData(Instances data) throws Exception {
@@ -174,7 +227,7 @@ public class treeC45 extends AbstractClassifier {
 			
 		}
 		double avgInfoGainData = totalInfoGain/((double)data.numAttributes()-1);
-		System.out.println(totalInfoGain+" / "+((double)data.numAttributes()-1)+"="+avgInfoGainData);
+		//System.out.println(totalInfoGain+" / "+((double)data.numAttributes()-1)+"="+avgInfoGainData);
 		return avgInfoGainData;
 	}
 	
@@ -291,6 +344,22 @@ public class treeC45 extends AbstractClassifier {
 	
 	public int getIndex() {
 		return indexattr;
+	}
+	
+	public Instances getExamplesNode() {
+		return examplesNode;
+	}
+	
+	public double getErrorEstimate() {
+		return errorEstimate;
+	}
+	
+	public void attributeSelectionMethod(int x){
+		attrSelectionMethod = x;
+	}
+	
+	public double getSplitPoint() {
+		return splitPoint;
 	}
 	
 	@Override

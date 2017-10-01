@@ -1,6 +1,4 @@
-import java.lang.Math;
 import weka.core.Attribute;
-import java.util.*;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -8,10 +6,13 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 
+import java.lang.Math;
 import java.util.Enumeration;
 import java.util.Random;
+import java.util.*;
+import java.io.*;
 
-public class ruleC45{
+public class ruleC45 implements Serializable {
 	private HashMap<Attribute,Double> preconditions = new HashMap<Attribute, Double>();
 	private HashMap<Attribute,Double> splitPreconds = new HashMap<Attribute, Double>();
 	private double classValue;

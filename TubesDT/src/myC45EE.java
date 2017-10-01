@@ -41,6 +41,7 @@ public class myC45EE extends AbstractClassifier {
 				if (childInstances[i].numInstances() != 0) {
 					child[i].buildClassifier(childInstances[i]);
 				}
+				
 				else {
 					System.out.println("-------[empty examples "+nodeAttribute+"-"+i+"]");
 					child[i].nodeAttribute = null;

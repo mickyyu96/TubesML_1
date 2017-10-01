@@ -30,6 +30,7 @@ public class myC45 extends AbstractClassifier {
 		
 		thisID3 = new treeC45();
 		thisID3.buildClassifier(train);
+		//printTree(thisID3);
 	    thisID3 = pruneT(thisID3, test);
 	}
 	
@@ -90,8 +91,6 @@ public class myC45 extends AbstractClassifier {
 		
 		if (temptree.getNodeAttribute() != null) {
 			if (checkIfAllChildAreLabel(temptree)) {
-				//System.out.println("-------atribut pruned:"+temptree.getNodeAttribute());
-				
 				Attribute oldattr = temptree.getNodeAttribute();
 				temptree.setNodeAttribute(null);
 				
@@ -108,22 +107,40 @@ public class myC45 extends AbstractClassifier {
 	}
 	
 	private treeC45 pruneTEE(treeC45 tree, Instances test) throws Exception {
-treeC45 temptree = new treeC45(tree);
-		
+		treeC45 temptree = new treeC45(tree);
 		if (temptree.getNodeAttribute() != null) {
 			if (checkIfAllChildAreLabel(temptree)) {
-				
-				Attribute oldattr = temptree.getNodeAttribute();
-				temptree.setNodeAttribute(null);
-				
-				if(!calculateAccuracy(temptree, test)) {
-					temptree.setNodeAttribute(oldattr);
-				}
+				System.out.println("-----checking: "+temptree.getNodeAttribute()+"------");
+				temptree = compareEstimatedError(temptree);
 			} else {
 				for (int i=0; i<(temptree.getNodeAttribute()).numValues(); i++) {
-					temptree.setChild(pruneT(temptree.getChild()[i],test), i);
+					temptree.setChild(pruneTEE(temptree.getChild()[i],test), i);
 				}
-			}			
+				if (checkIfAllChildAreLabel(temptree)) {
+					temptree = compareEstimatedError(temptree);
+				}
+			}
+		}
+		return temptree;
+	}
+	
+	private treeC45 compareEstimatedError(treeC45 tree) {
+		treeC45 temptree = new treeC45(tree);
+		Attribute oldattr = temptree.getNodeAttribute();
+		System.out.println(temptree.getExamplesNode());
+		System.out.println(temptree.getClassValue());
+		double N = temptree.getExamplesNode().size();
+		double f = 0.0; //examples not in node's majority class
+		double errorEstimateChild = 0.0;
+		for (int i=0; i<oldattr.numValues(); i++){
+				int NChild = temptree.getChild()[i].getExamplesNode().size();// Number of examples in child node
+				errorEstimateChild += (NChild/(double)temptree.getExamplesNode().size())*temptree.getChild()[i].getErrorEstimate();
+		}
+		
+		System.out.println("[error estimate]"+temptree.getErrorEstimate()+" < [error estimate child]"+errorEstimateChild);
+		if (temptree.getErrorEstimate() < errorEstimateChild) {
+			temptree.setNodeAttribute(null);
+			System.out.println("leaf pruned");
 		}
 		return temptree;
 	}
