@@ -65,10 +65,10 @@ public class treeC45 extends AbstractClassifier {
 			nodeAttribute = data.attribute((int) maxInfoGainData[0]);
 			if(nodeAttribute.isNumeric()) {
 				child = new treeC45[2];
-
-	    		data.sort(nodeAttribute);
-	    		splitC45 childInstances = new splitC45();
-	    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
+	
+		    		data.sort(nodeAttribute);
+		    		splitC45 childInstances = new splitC45();
+		    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
 				
 		    		if(childInstances.isSplit()) {
 		    			splitPoint = childInstances.splitPoint();
@@ -104,7 +104,16 @@ public class treeC45 extends AbstractClassifier {
 				}
 			}
 		}
-		calculateErrorEstimateNode(data);
+		if (nodeAttribute != null) {
+			if (nodeAttribute.isNumeric()) {
+				calculateErrorEstimateNodeAttrCont(data);
+			} else {
+				calculateErrorEstimateNode(data);
+			}
+		} else {
+			calculateErrorEstimateNode(data);
+		}
+		
 		if (examplesNode == null) {
 	    		System.out.println(nodeAttribute);
 	    }
@@ -114,13 +123,14 @@ public class treeC45 extends AbstractClassifier {
 		double f = 0.0;
 		double N = data.size();
 		if (N!=0) {
-			Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
-			while (examplesNodeEnum.hasMoreElements()) {
-				Instance inst = (Instance) examplesNodeEnum.nextElement();
-				if ((int)inst.classValue() != classValue) {
-					f ++;
+				Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
+				while (examplesNodeEnum.hasMoreElements()) {
+					Instance inst = (Instance) examplesNodeEnum.nextElement();
+					if ((int)inst.classValue() != classValue) {
+						f ++;
+					}
 				}
-			}
+			
 			f = (double)f/N;
 			errorEstimate = getErrorEstimate(f, N);
 		}
@@ -129,6 +139,37 @@ public class treeC45 extends AbstractClassifier {
 		System.out.println("class Value: "+classValue);
 		System.out.println("---------------------------------------------");
 		System.out.println();
+	}
+	
+	private void calculateErrorEstimateNodeAttrCont(Instances data) {
+		double f = 0.0;
+		double N = data.size();
+		if (N!=0) {
+			int left = 0;
+			int right = 0;
+			Enumeration<Instance> examplesNodeEnum = data.enumerateInstances();
+			while (examplesNodeEnum.hasMoreElements()) {
+				Instance inst = (Instance) examplesNodeEnum.nextElement();
+				if ((int)inst.classValue() <= splitPoint) {
+					left ++;
+				} else {
+					right ++;
+				}
+			}
+			
+			if (left>right) {
+				f = left;
+			} else {
+				f = right;
+			}
+			f = (double)f/N;
+			errorEstimate = getErrorEstimate(f, N);
+		}
+//		System.out.println("--------------"+nodeAttribute+"--------------");
+//		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
+//		System.out.println("class Value: "+classValue);
+//		System.out.println("---------------------------------------------");
+//		System.out.println();
 	}
 	
 	private double getErrorEstimate(double f, double N) {

@@ -139,8 +139,10 @@ public class myC45 extends AbstractClassifier {
 		double errorEstimateChild = 0.0;
 		for (int i=0; i<oldattr.numValues(); i++){
 				System.out.println(temptree.getChild()[i].getExamplesNode());
-				int NChild = temptree.getChild()[i].getExamplesNode().size();// Number of examples in child node
-				errorEstimateChild += (NChild/(double)temptree.getExamplesNode().size())*temptree.getChild()[i].getErrorEstimate();
+				if (temptree.getChild()[i].getExamplesNode() != null) {
+					int NChild = temptree.getChild()[i].getExamplesNode().size();// Number of examples in child node
+					errorEstimateChild += (NChild/(double)temptree.getExamplesNode().size())*temptree.getChild()[i].getErrorEstimate();
+				}
 		}
 		
 		System.out.println("[error estimate]"+temptree.getErrorEstimate()+" < [error estimate child]"+errorEstimateChild);

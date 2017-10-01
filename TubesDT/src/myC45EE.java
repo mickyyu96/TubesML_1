@@ -48,8 +48,7 @@ public class myC45EE extends AbstractClassifier {
 					child[i].classValue = getMostCommonClass(data);
 				}
 			}
-			
-			
+		
 		}
 		
 		// C45 pruning

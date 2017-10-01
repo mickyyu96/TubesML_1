@@ -68,7 +68,7 @@ public class myC45RP extends AbstractClassifier {
 			double maxacc = rules.get(0).getAccuracy();
 			int maxi = 0;
 			for(int i=1;i<rules.size();i++) {
-				if(rules.get(i).getAccuracy()>maxacc) {
+				if(rules.get(i).getAccuracy()<maxacc) {
 					maxacc = rules.get(i).getAccuracy();
 					maxi = i;
 				}
@@ -77,7 +77,7 @@ public class myC45RP extends AbstractClassifier {
 			orderedRules.add(temp);
 		}
 		rules = new ArrayList<ruleC45>(orderedRules);
-		//printRules();
+		printRules();
 	}
 	
 	private void printRules() {

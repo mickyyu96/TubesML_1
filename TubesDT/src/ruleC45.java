@@ -17,8 +17,7 @@ public class ruleC45 implements Serializable {
 	private HashMap<Attribute,Double> splitPreconds = new HashMap<Attribute, Double>();
 	private double classValue;
 	private double accuracy = 0;
-	private double cErrorEstimate = 0.25;
-	private double zErrorEstimate = 0.67;
+	private double zErrorEstimate = 1.65;
 	
 	public ruleC45() {}
 	public ruleC45(ruleC45 rule) {
@@ -54,7 +53,6 @@ public class ruleC45 implements Serializable {
 		}
 		System.out.println("class value: "+classValue);
 		System.out.println("accuracy: "+accuracy);
-		System.out.println("==============");
 	}
 	
 	public void prune(Instances test) {
@@ -72,8 +70,8 @@ public class ruleC45 implements Serializable {
 					double lastval = preconditions.get(key);
 					it.remove();
 					double evalprecond = evaluate(test);
-					System.out.println("[ evalprecond: "+evalprecond+" ]>[ accuracy: "+accuracy+"]");
-					if (evalprecond > accuracy) {
+					//System.out.println("[ evalprecond: "+evalprecond+" ]<[ accuracy: "+accuracy+"]");
+					if (evalprecond < accuracy) {
 						accuracy = evalprecond;
 						maxacc_key = lastkey;
 					} 
@@ -81,13 +79,13 @@ public class ruleC45 implements Serializable {
 				}
 				preconditions = new HashMap<Attribute,Double>(newpreconds);
 				if (maxacc_key != null) {
-					printRule();
+					//printRule();
 					preconditions.remove(maxacc_key);
-					System.out.println("-----pruned!----");
-					printRule();
+					//System.out.println("-----pruned!----");
+					//printRule();
 					maxacc_key = null;
 				} else {
-					printRule();
+					//printRule();
 					pruned = false;
 				}
 			}
@@ -126,15 +124,25 @@ public class ruleC45 implements Serializable {
 	}
 	
 	public double evaluate(Instances test) {
-		double classified = 0.0;
+		//System.out.println(">>>evaluate");
+		double wrong = 0.0;
+		double N = 0.0;
+		double f = 0.0;
+		//printRule();
 		for (int i=0; i< test.size(); i++) {
-			if (classify(test.get(i))){
-				if (test.get(i).classValue() == classValue) {
-					classified++;
+			if (test.get(i).classValue() == classValue) {
+				N++;
+				//System.out.println(test.get(i));
+				if (!classify(test.get(i))){
+					wrong++;
+					//System.out.println("wrong :(");
 				}
 			}
 		}
-		//System.out.println("f:"+unclassified/(double)test.size()+" N:"+test.size());
-		return classified/(double)test.size();
+		f = wrong/N;
+
+		System.out.println("f:"+wrong+" N:"+test.size()+" ="+(wrong/(double)test.size()));
+		return getErrorEstimate(f, N);
+		//return wrong/(double)test.size();
 	}
 }
