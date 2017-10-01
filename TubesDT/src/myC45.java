@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Random;
 
 public class myC45 extends AbstractClassifier {
-	private treeC45 thisID3;
-	
+	private treeC45 thisID3 = new treeC45();
+	private int method = 0;
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
@@ -28,10 +28,14 @@ public class myC45 extends AbstractClassifier {
 		Instances train = new Instances(data, 0, trainSize);
 		Instances test = new Instances(data, trainSize, testSize);
 		
-		thisID3 = new treeC45();
+		thisID3.attributeSelectionMethod(method);
 		thisID3.buildClassifier(train);
 		//printTree(thisID3);
-	    thisID3 = pruneT(thisID3, test);
+	    thisID3 = pruneTEE(thisID3, test);
+	}
+	
+	public void setMethod(int x) {
+		method = x;
 	}
 	
 	// Not used, for future development
@@ -134,6 +138,7 @@ public class myC45 extends AbstractClassifier {
 		double f = 0.0; //examples not in node's majority class
 		double errorEstimateChild = 0.0;
 		for (int i=0; i<oldattr.numValues(); i++){
+				System.out.println(temptree.getChild()[i].getExamplesNode());
 				int NChild = temptree.getChild()[i].getExamplesNode().size();// Number of examples in child node
 				errorEstimateChild += (NChild/(double)temptree.getExamplesNode().size())*temptree.getChild()[i].getErrorEstimate();
 		}
