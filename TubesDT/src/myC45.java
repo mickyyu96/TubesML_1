@@ -30,7 +30,6 @@ public class myC45 extends AbstractClassifier {
 		
 		thisID3.attributeSelectionMethod(method);
 		thisID3.buildClassifier(train);
-		System.out.println("POHON");
 		printTree(thisID3);
 	   // thisID3 = pruneTEE(thisID3, test);
 	}
