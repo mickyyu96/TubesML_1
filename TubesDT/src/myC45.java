@@ -30,8 +30,9 @@ public class myC45 extends AbstractClassifier {
 		
 		thisID3.attributeSelectionMethod(method);
 		thisID3.buildClassifier(train);
-		//printTree(thisID3);
-	    thisID3 = pruneTEE(thisID3, test);
+		System.out.println("POHON");
+		printTree(thisID3);
+	   // thisID3 = pruneTEE(thisID3, test);
 	}
 	
 	public void setMethod(int x) {
@@ -186,9 +187,9 @@ public class myC45 extends AbstractClassifier {
 			System.out.println("["+tree.getClassValue()+"]");
 		}
 		else {
-			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]");
-			for (int i=0; i<(tree.getNodeAttribute()).numValues(); i++) {
-				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]");
+			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]    Split point: " + tree.splitPoint);
+			for (int i=0; i<(tree.getChild()).length; i++) {
+				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]" );
 				printTree(tree.getChild()[i]);
 			}
 		}
