@@ -21,6 +21,7 @@ public class myC45 extends AbstractClassifier {
 	    data.deleteWithMissingClass();
 	    data = handleMissingAttributeValue(data);
 	    data.randomize(new Random(1));
+	    
 	    //split data 
 	    int trainSize = (int) Math.round(data.numInstances() * 80 / 100);
 		int testSize = data.numInstances() - trainSize;
@@ -90,6 +91,27 @@ public class myC45 extends AbstractClassifier {
 		if (temptree.getNodeAttribute() != null) {
 			if (checkIfAllChildAreLabel(temptree)) {
 				//System.out.println("-------atribut pruned:"+temptree.getNodeAttribute());
+				
+				Attribute oldattr = temptree.getNodeAttribute();
+				temptree.setNodeAttribute(null);
+				
+				if(!calculateAccuracy(temptree, test)) {
+					temptree.setNodeAttribute(oldattr);
+				}
+			} else {
+				for (int i=0; i<(temptree.getNodeAttribute()).numValues(); i++) {
+					temptree.setChild(pruneT(temptree.getChild()[i],test), i);
+				}
+			}			
+		}
+		return temptree;
+	}
+	
+	private treeC45 pruneTEE(treeC45 tree, Instances test) throws Exception {
+treeC45 temptree = new treeC45(tree);
+		
+		if (temptree.getNodeAttribute() != null) {
+			if (checkIfAllChildAreLabel(temptree)) {
 				
 				Attribute oldattr = temptree.getNodeAttribute();
 				temptree.setNodeAttribute(null);

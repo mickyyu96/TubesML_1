@@ -51,19 +51,21 @@ public class treeC45 extends AbstractClassifier {
 	    		splitC45 childInstances = new splitC45();
 	    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
 				
-	    		if(childInstances.isSplit()) {
-	    			splitPoint = childInstances.splitPoint();
-	    			child[0] = new treeC45();
-	    			child[1] = new treeC45();
-	    			child[0].parent = this;
-	    			child[1].parent = this;
+		    		if(childInstances.isSplit()) {
+		    			splitPoint = childInstances.splitPoint();
+		    			child[0] = new treeC45();
+		    			child[1] = new treeC45();
+		    			child[0].indexattr = 0;
+		    			child[1].indexattr = 1;
+		    			child[0].parent = this;
+		    			child[1].parent = this;
 					child[0].buildClassifier(childInstances.leftInstances());
 					child[1].buildClassifier(childInstances.rightInstances());
-	    		} else {
-	    			child[0] = new treeC45();
+		    		} else {
+		    			child[0] = new treeC45();
 					child[0].nodeAttribute = null;
 					child[0].classValue = getMostCommonClass(data);
-	    		}
+		    		}
 	    		
 			} else {
 				child = new treeC45[nodeAttribute.numValues()];
@@ -92,14 +94,14 @@ public class treeC45 extends AbstractClassifier {
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-	    	if (attr.isNumeric()) {
-	    		data.sort(attr.index());
-	    		splitC45 numAttr = new splitC45();
-	    		numAttr.handleNumericAttribute(attr.index(), data);
-	    		infoGain = numAttr.infoGain();
-	    	} else {
-	    		infoGain = countInfoGain(data, attr);
-	    	}
+		    	if (attr.isNumeric()) {
+		    		data.sort(attr.index());
+		    		splitC45 numAttr = new splitC45();
+		    		numAttr.handleNumericAttribute(attr.index(), data);
+		    		infoGain = numAttr.infoGain();
+		    	} else {
+		    		infoGain = countInfoGain(data, attr);
+		    	}
 			if (maxInfoGain < infoGain) {
 				maxInfoGain = infoGain;
 				maxInfoGainIdx = attr.index();
@@ -121,13 +123,24 @@ public class treeC45 extends AbstractClassifier {
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
+		 	if (attr.isNumeric()) {
+		    		data.sort(attr.index());
+		    		splitC45 numAttr = new splitC45();
+		    		numAttr.handleNumericAttribute(attr.index(), data);
+		    		gain = numAttr.infoGain();
+		    		double prob0 = numAttr.getPerBag()[0]/(double)data.size();
+		    		double prob1 = numAttr.getPerBag()[1]/(double)data.size();
+		    		splitInformation = - (prob0 * Utils.log2(prob0)) - (prob1 * Utils.log2(prob1));
+		    	} else {
+		    		gain = countInfoGain(data, attr);
+		    		splitInformation = countSplitInformation(data, attr);
+		    	}
 //			System.out.println("===="+attr);
-			gain = countInfoGain(data, attr);
+			
 //			System.out.println("gain:"+gain);
 //			System.out.println("split information:"+countSplitInformation(data, attr));
 //			System.out.println("gain ratio:"+((double)gain/countSplitInformation(data, attr)));
 			if (gain >= avgGain) {
-				splitInformation = countSplitInformation(data, attr);
 				double gainRatio = gain/splitInformation;	
 				if (gainRatio > maxGainRatio) {
 					maxGainRatio = gainRatio;
@@ -148,7 +161,14 @@ public class treeC45 extends AbstractClassifier {
 		//System.out.println(">>>>getAvgGainData");
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
-			infoGain = countInfoGain(data, attr);
+			if (attr.isNumeric()) {
+		    		data.sort(attr.index());
+		    		splitC45 numAttr = new splitC45();
+		    		numAttr.handleNumericAttribute(attr.index(), data);
+		    		infoGain = numAttr.infoGain();
+			} else {
+				infoGain = countInfoGain(data, attr);
+			}
 			//System.out.println("gain "+attr+" : "+infoGain);
 			totalInfoGain += infoGain;
 			

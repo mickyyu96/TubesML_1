@@ -13,6 +13,7 @@ import java.util.Random;
 
 public class ruleC45{
 	private HashMap<Attribute,Double> preconditions = new HashMap<Attribute, Double>();
+	private HashMap<Attribute,Double> splitPreconds = new HashMap<Attribute, Double>();
 	private double classValue;
 	private double accuracy = 0;
 	private double cErrorEstimate = 0.25;
@@ -27,6 +28,10 @@ public class ruleC45{
 	
 	public void addPrecond(Attribute attr, double indexAttr) {
 		preconditions.put(attr, indexAttr);
+	}
+	
+	public void addSplitPrecond(Attribute attr, double split) {
+		splitPreconds.put(attr, split);
 	}
 	
 	public void addClassValue(double val) {
@@ -66,7 +71,7 @@ public class ruleC45{
 					double lastval = preconditions.get(key);
 					it.remove();
 					double evalprecond = evaluate(test);
-					//System.out.println("[ evalprecond: "+evalprecond+" ]>[ accuracy: "+accuracy+"]");
+					System.out.println("[ evalprecond: "+evalprecond+" ]>[ accuracy: "+accuracy+"]");
 					if (evalprecond > accuracy) {
 						accuracy = evalprecond;
 						maxacc_key = lastkey;
@@ -75,13 +80,13 @@ public class ruleC45{
 				}
 				preconditions = new HashMap<Attribute,Double>(newpreconds);
 				if (maxacc_key != null) {
-					//printRule();
+					printRule();
 					preconditions.remove(maxacc_key);
-					//System.out.println("-----pruned!----");
-					//printRule();
+					System.out.println("-----pruned!----");
+					printRule();
 					maxacc_key = null;
 				} else {
-					//printRule();
+					printRule();
 					pruned = false;
 				}
 			}
@@ -91,9 +96,19 @@ public class ruleC45{
 	public boolean classify(Instance data) {
 		boolean valid = true;
 		for (Attribute key : preconditions.keySet()) {
-			if (data.value(key) != preconditions.get(key)) {
-				valid = false;
-			}
+			if (key.isNumeric()) {
+				int val = 0;
+				if((double) data.value(key) > splitPreconds.get(key)) {
+					val = 1;
+				}
+				if (val != preconditions.get(key)) {
+					valid = false;
+				}
+			}else {
+				if (data.value(key) != preconditions.get(key)) {
+					valid = false;
+				}
+			}	
 		}
 		return valid;
 	}

@@ -32,6 +32,10 @@ public class splitC45 {
 		return m_perClass[classIndex];
 	}
 	
+	public double[] getPerBag() {
+		return m_perBag;
+	}
+	
 	public double splitPoint() {
 		return m_splitPoint;
 	}
