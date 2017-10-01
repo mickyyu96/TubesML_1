@@ -115,19 +115,28 @@ public class treeC45 extends AbstractClassifier {
 		double maxGainRatio = 0.0;
 		double maxGainRatioIdx = 0.0;
 		double avgGain = getAvgGainData(data);
+//		System.out.println();
+//		System.out.println("----calculate Gain Ratio----");
+//		System.out.println("avg gain:"+avgGain);
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
+//			System.out.println("===="+attr);
 			gain = countInfoGain(data, attr);
+//			System.out.println("gain:"+gain);
+//			System.out.println("split information:"+countSplitInformation(data, attr));
+//			System.out.println("gain ratio:"+((double)gain/countSplitInformation(data, attr)));
 			if (gain >= avgGain) {
 				splitInformation = countSplitInformation(data, attr);
-				double gainRatio = gain/splitInformation;
+				double gainRatio = gain/splitInformation;	
 				if (gainRatio > maxGainRatio) {
 					maxGainRatio = gainRatio;
 					maxGainRatioIdx = attr.index();
 				}
 			}
 		}
+
+		//System.out.println("<"+maxGainRatioIdx+", "+maxGainRatio+">");
 		double[] maxGainRatioData = {maxGainRatioIdx, maxGainRatio};
 		return maxGainRatioData;
 	}
@@ -136,12 +145,16 @@ public class treeC45 extends AbstractClassifier {
 		double infoGain;
 		double totalInfoGain = 0.0;
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
+		//System.out.println(">>>>getAvgGainData");
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
 			infoGain = countInfoGain(data, attr);
+			//System.out.println("gain "+attr+" : "+infoGain);
 			totalInfoGain += infoGain;
+			
 		}
-		double avgInfoGainData = totalInfoGain/data.numAttributes();
+		double avgInfoGainData = totalInfoGain/((double)data.numAttributes()-1);
+		System.out.println(totalInfoGain+" / "+((double)data.numAttributes()-1)+"="+avgInfoGainData);
 		return avgInfoGainData;
 	}
 	
@@ -169,8 +182,7 @@ public class treeC45 extends AbstractClassifier {
 		
 		for (int i=0; i<attr.numValues(); i++) {
 			if (splitInstancesByAttr[i].numInstances() != 0) {
-				
-				prob = splitInstancesByAttr[i].numInstances() / data.size();
+				prob = splitInstancesByAttr[i].numInstances() / (double)data.size();
 			    	if (prob != 0.0) {
 			    		entropy -= prob * Utils.log2(prob);
 			    	}
