@@ -51,11 +51,12 @@ public class treeC45 extends AbstractClassifier {
 	
 	private void makeTree(Instances data) throws Exception {
 		double[] maxInfoGainData;
-		if (attrSelectionMethod == 0) {
-			maxInfoGainData = getMaxInfoGainData(data);
-		} else {
-			maxInfoGainData = getMaxGainRatioData(data);
-		}
+//		if (attrSelectionMethod == 0) {
+//			maxInfoGainData = getMaxInfoGainData(data);
+//		} else {
+//			maxInfoGainData = getMaxGainRatioData(data);
+//		}
+		maxInfoGainData = getMaxInfoGainData(data);
 		classValue = getMostCommonClass(data);
 		if (maxInfoGainData[1] == 0.0) {
 			nodeAttribute = null;
@@ -147,6 +148,8 @@ public class treeC45 extends AbstractClassifier {
 		double maxInfoGain = 0.0;
 		double maxInfoGainIdx = 0.0;
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
+		System.out.println();
+		System.out.println("----calculate Info Gain----");
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
 		    	if (attr.isNumeric()) {
@@ -157,6 +160,8 @@ public class treeC45 extends AbstractClassifier {
 		    	} else {
 		    		infoGain = countInfoGain(data, attr);
 		    	}
+				System.out.println("===="+attr);
+				System.out.println("gain:"+infoGain);
 			if (maxInfoGain < infoGain) {
 				maxInfoGain = infoGain;
 				maxInfoGainIdx = attr.index();

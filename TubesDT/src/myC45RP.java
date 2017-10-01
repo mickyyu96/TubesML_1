@@ -77,7 +77,7 @@ public class myC45RP extends AbstractClassifier {
 			orderedRules.add(temp);
 		}
 		rules = new ArrayList<ruleC45>(orderedRules);
-		printRules();
+		//printRules();
 	}
 	
 	private void printRules() {
