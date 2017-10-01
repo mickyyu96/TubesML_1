@@ -12,9 +12,9 @@ import java.util.Enumeration;
 import java.util.Random;
 
 public class myC45RP extends AbstractClassifier {
-	private treeC45 thisID3;
+	private treeC45 thisID3 = new treeC45();
 	private ArrayList<ruleC45> rules;
-	
+	private int method = 0;
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		data = new Instances(data);
@@ -22,15 +22,15 @@ public class myC45RP extends AbstractClassifier {
 	    data.randomize(new Random(1));
 	    //split data 
 		rules = new ArrayList<ruleC45>();
-		thisID3 = new treeC45();
+		thisID3.attributeSelectionMethod(method);
 		thisID3.buildClassifier(data);
-		System.out.println("print tree");
 		printTree(thisID3);
-		System.out.println("-----");
-		System.out.println();
 	    translateToRules(thisID3);
-	    pruneRules(data); 
-	    //printRules();
+	    pruneRules(data);
+	}
+	
+	public void setMethod(int x) {
+		method = x;
 	}
 	
 	private void translateToRules(treeC45 tree) throws Exception {
