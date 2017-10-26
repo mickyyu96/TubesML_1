@@ -6,32 +6,28 @@ import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 
-import java.lang.Math;
-import java.util.Enumeration;
-import java.util.Random;
+import java.lang.*;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.AbstractMap.SimpleEntry;
 import java.io.*;
 
 public class ruleC45 implements Serializable {
-	private HashMap<Attribute,Double> preconditions = new HashMap<Attribute, Double>();
-	private HashMap<Attribute,Double> splitPreconds = new HashMap<Attribute, Double>();
+	private ArrayList<precondC45> precond = new ArrayList<>();
+	
 	private double classValue;
 	private double accuracy = 0;
 	private double zErrorEstimate = 1.65;
 	
 	public ruleC45() {}
 	public ruleC45(ruleC45 rule) {
-		preconditions = new HashMap<Attribute, Double>(rule.preconditions);
 		classValue = rule.classValue;
 		accuracy = rule.accuracy;
 	} 
 	
-	public void addPrecond(Attribute attr, double indexAttr) {
-		preconditions.put(attr, indexAttr);
-	}
-	
-	public void addSplitPrecond(Attribute attr, double split) {
-		splitPreconds.put(attr, split);
+	public void addPrecond(Attribute attr, double indexAttr, double split) {
+		precondC45 newprecond = new precondC45(attr, indexAttr, split);
+		precond.add(newprecond);
 	}
 	
 	public void addClassValue(double val) {
@@ -48,44 +44,48 @@ public class ruleC45 implements Serializable {
 	
 	public void printRule() {
 		System.out.println("=====rule=====");
-		for (Attribute key : preconditions.keySet()) {
-			System.out.println("<"+key+" = "+preconditions.get(key)+">");
+		Double i = 0.0;
+		for (precondC45 rule: precond) {
+			if (rule.attrprecond.isNumeric()) {
+				System.out.println("<"+rule.attrprecond+" = "+rule.splitprecond+"=="+rule.valueprecond+">");
+			}else {
+				System.out.println("<"+rule.attrprecond+" = "+rule.valueprecond+">");
+			}
+			i++;
 		}
 		System.out.println("class value: "+classValue);
 		System.out.println("accuracy: "+accuracy);
 	}
 	
 	public void prune(Instances test) {
-		int maxacc = 0;
-		Attribute maxacc_key = null;
+		int maxacc_key = -1;
 		boolean pruned = true;
 		accuracy = evaluate(test);
-		if (preconditions.size()>1) {
+		if (precond.size()>1) {
+			//printRule();
 			while (pruned) {
-				Iterator<Attribute> it = preconditions.keySet().iterator();
-				HashMap<Attribute,Double> newpreconds = new HashMap<Attribute,Double>();
-				while (it.hasNext()) {
-					Attribute key = it.next();
-					Attribute lastkey = key;
-					double lastval = preconditions.get(key);
-					it.remove();
-					double evalprecond = evaluate(test);
-					//System.out.println("[ evalprecond: "+evalprecond+" ]<[ accuracy: "+accuracy+"]");
-					if (evalprecond < accuracy) {
-						accuracy = evalprecond;
-						maxacc_key = lastkey;
-					} 
-					newpreconds.put(lastkey, lastval);
-				}
-				preconditions = new HashMap<Attribute,Double>(newpreconds);
-				if (maxacc_key != null) {
+				ArrayList<precondC45> lastprecond = new ArrayList<precondC45>(precond);
+				for (int i = 0; i < precond.size(); i++) {
+					//System.out.println("-------------------removeeeeeee");
 					//printRule();
-					preconditions.remove(maxacc_key);
+					precond.remove(i);
+					//printRule();
+					double evalprecond = evaluate(test);
+					//System.out.println("evalprecond:"+evalprecond+"> accuracy:"+accuracy);
+					if (evalprecond > accuracy) {
+						accuracy = evalprecond;
+						maxacc_key = i;
+					}
+					precond = new ArrayList<precondC45>(lastprecond);
+					i++;
+				}
+				
+				if (maxacc_key != -1) {
+					precond.remove(maxacc_key);
 					//System.out.println("-----pruned!----");
 					//printRule();
-					maxacc_key = null;
+					maxacc_key = -1;
 				} else {
-					//printRule();
 					pruned = false;
 				}
 			}
@@ -94,55 +94,52 @@ public class ruleC45 implements Serializable {
 	
 	public boolean classify(Instance data) {
 		boolean valid = true;
-		for (Attribute key : preconditions.keySet()) {
-			if (key.isNumeric()) {
-				int val = 0;
-				if((double) data.value(key) > splitPreconds.get(key)) {
-					val = 1;
-				}
-				if (val != preconditions.get(key)) {
-					valid = false;
+		Double i = 0.0;
+		//printRule();
+		for (precondC45 rule: precond) {
+			//System.out.println(data);
+			//System.out.println(rule.getKey());
+			//System.out.println("i: "+i);
+			if (rule.attrprecond.isNumeric()) {
+				if (rule.valueprecond == 0) {
+					
+					if ((double) data.value(rule.attrprecond) > rule.splitprecond) {
+						valid = false;
+					}
+				} else if (rule.valueprecond == 1) {
+					if ((double) data.value(rule.attrprecond) <= rule.splitprecond) {
+						valid = false;
+					}
 				}
 			}else {
-				if (data.value(key) != preconditions.get(key)) {
+				if (data.value(rule.attrprecond) != rule.valueprecond) {
 					valid = false;
 				}
-			}	
+			}
+			i++;
+			//System.out.println("->"+i);
 		}
+
 		return valid;
 	}
 	
-	private double getErrorEstimate(double f, double N) {
-		double temp0 = (f/N) - (Math.pow(f, 2)*1.0/N) + (Math.pow(zErrorEstimate, 2)*1.0/(4.0*Math.pow(N, 2)));
-		
-		double temp1 = zErrorEstimate * Math.sqrt(temp0);
-		double temp2 = Math.pow(zErrorEstimate, 2)/(2.0*N);
-		double temp3 = temp1 + temp2 + f;
-		double divider = 1 + (Math.pow(zErrorEstimate, 2)/N);
-		
-		return temp3/divider;
-	}
-	
 	public double evaluate(Instances test) {
-		//System.out.println(">>>evaluate");
-		double wrong = 0.0;
+		double right = 0.0;
 		double N = 0.0;
-		double f = 0.0;
-		//printRule();
+		
 		for (int i=0; i< test.size(); i++) {
-			if (test.get(i).classValue() == classValue) {
+			if (classify(test.get(i))){
 				N++;
-				//System.out.println(test.get(i));
-				if (!classify(test.get(i))){
-					wrong++;
-					//System.out.println("wrong :(");
+				if (test.get(i).classValue() == classValue) {
+					right++;
 				}
 			}
 		}
-		f = wrong/N;
-
-		System.out.println("f:"+wrong+" N:"+test.size()+" ="+(wrong/(double)test.size()));
-		return getErrorEstimate(f, N);
-		//return wrong/(double)test.size();
+		if (N == 0) {
+			//System.out.println("test Nan");
+			return 0;
+		}
+		//System.out.println("right/N="+(right/N));
+		return right/N;
 	}
 }

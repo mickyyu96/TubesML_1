@@ -13,7 +13,7 @@ public class splitC45 {
 	private double m_perBag[];
 	private double m_perClass[];
 	private double m_splitPoint = Double.MAX_VALUE;
-	private double m_infoGain = 0;
+	private double m_infoGain = 0.0;
 	private int m_index = 0;
 	private Instances m_leftInstances;
 	private Instances m_rightInstances;
@@ -93,9 +93,9 @@ public class splitC45 {
 			m_perBag[1]++;
 			m_perClass[classIndex]++;
 			total++;
+			i++;
 		}
 		firstMiss = i;
-		
 		next = 1;
 		last = 0;
 		while(next < firstMiss) {
@@ -134,9 +134,9 @@ public class splitC45 {
 				    		entropyRight -= prob * Utils.log2(prob);
 				    	}
 					}
-					currentInfoGain = entropy - (probLeft * entropyLeft) + (probRight * entropyRight);
-				
-					if(currentInfoGain > m_infoGain) {
+					currentInfoGain = entropy - ((probLeft * entropyLeft) + (probRight * entropyRight));
+					
+					if(currentInfoGain > m_infoGain - 1e-5) {
 						m_infoGain = currentInfoGain;
 						splitIndex = next - 1;
 					}
@@ -148,14 +148,6 @@ public class splitC45 {
 			next++;
 		}
 		
-		// Check whether split candidate found
-		if(m_index == 0) {
-			return;
-		}
-		
-		m_splitPoint = (data.instance(splitIndex+1).value(m_attIndex) + 
-				data.instance(splitIndex).value(m_attIndex)) / 2;
-		
 		// Restore distribution for best split
 		m_perClassPerBag = new double[numBags][0];
 		m_perBag = new double[numBags];
@@ -165,24 +157,44 @@ public class splitC45 {
 		}
 		total = 0;
 		
-		for(i = 0; i < splitIndex + 1; i++) {
-			instance = data.instance(i);
-			m_leftInstances.add(instance);
-			classIndex = (int) instance.classValue();
-			m_perClassPerBag[0][classIndex]++;
-			m_perClass[classIndex]++;
-			m_perBag[0]++;
-			total++;
-		}
-		
-		for(i = splitIndex + 1; i < firstMiss; i++) {
-			instance = data.instance(i);
-			m_rightInstances.add(instance);
-			classIndex = (int) instance.classValue();
-			m_perClassPerBag[1][classIndex]++;
-			m_perClass[classIndex]++;
-			m_perBag[1]++;
-			total++;
+		// Check whether split candidate found
+		if(m_index == 0) {
+			m_leftInstances = new Instances(data, 0);
+			
+			m_rightInstances = new Instances(data, 0);
+			for(i = 0; i < firstMiss; i++) {
+				instance = data.instance(i);
+				m_rightInstances.add(instance);
+				classIndex = (int) instance.classValue();
+				m_perClassPerBag[1][classIndex]++;
+				m_perClass[classIndex]++;
+				m_perBag[1]++;
+				total++;
+			}
+		} else {
+			m_splitPoint = (data.instance(splitIndex+1).value(m_attIndex) + 
+					data.instance(splitIndex).value(m_attIndex)) / 2;
+			m_leftInstances = new Instances(data, 0);
+			for(i = 0; i < splitIndex + 1; i++) {
+				instance = data.instance(i);
+				m_leftInstances.add(instance);
+				classIndex = (int) instance.classValue();
+				m_perClassPerBag[0][classIndex]++;
+				m_perClass[classIndex]++;
+				m_perBag[0]++;
+				total++;
+			}
+			
+			m_rightInstances = new Instances(data, 0);
+			for(i = splitIndex + 1; i < firstMiss; i++) {
+				instance = data.instance(i);
+				m_rightInstances.add(instance);
+				classIndex = (int) instance.classValue();
+				m_perClassPerBag[1][classIndex]++;
+				m_perClass[classIndex]++;
+				m_perBag[1]++;
+				total++;
+			}
 		}
 	}	
 }

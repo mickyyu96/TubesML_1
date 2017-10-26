@@ -11,8 +11,8 @@ import java.util.Vector;
 
 public class treeC45 extends AbstractClassifier {
 	private treeC45 parent;
-	int indexattr = -1;
-	private double splitPoint = Double.MAX_VALUE; // for numeric attribute
+	int indexattr = 0;
+	public double splitPoint = Double.MAX_VALUE; // for numeric attribute
 	private treeC45[] child;
 	private Attribute nodeAttribute;
 	private double classValue;
@@ -29,8 +29,8 @@ public class treeC45 extends AbstractClassifier {
 		indexattr = tree.indexattr;
 		splitPoint = tree.splitPoint;
 		if (tree.nodeAttribute != null) {
-			child = new treeC45[tree.nodeAttribute.numValues()];
-			for (int i = 0; i<tree.nodeAttribute.numValues(); i++) {
+			child = new treeC45[tree.child.length];
+			for (int i = 0; i<tree.child.length; i++) {
 				child[i] = new treeC45(tree.child[i]);
 			}
 		}
@@ -65,7 +65,6 @@ public class treeC45 extends AbstractClassifier {
 			nodeAttribute = data.attribute((int) maxInfoGainData[0]);
 			if(nodeAttribute.isNumeric()) {
 				child = new treeC45[2];
-	
 		    		data.sort(nodeAttribute);
 		    		splitC45 childInstances = new splitC45();
 		    		childInstances.handleNumericAttribute(nodeAttribute.index(), data);
@@ -81,10 +80,12 @@ public class treeC45 extends AbstractClassifier {
 					child[0].buildClassifier(childInstances.leftInstances());
 					child[1].buildClassifier(childInstances.rightInstances());
 		    		} else {
+		    			child[0].parent = this;
 		    			child[0] = new treeC45();
 					child[0].nodeAttribute = null;
 					child[0].classValue = getMostCommonClass(data);
 		    		}
+		    		//System.out.println("My parent is"+this.getNodeAttribute());
 	    		
 			} else {
 				child = new treeC45[nodeAttribute.numValues()];
@@ -98,7 +99,6 @@ public class treeC45 extends AbstractClassifier {
 					}
 					else {
 						child[i].nodeAttribute = null;
-						child[i].indexattr = i;
 						child[i].classValue = getMostCommonClass(data);
 					}
 				}
@@ -134,11 +134,6 @@ public class treeC45 extends AbstractClassifier {
 			f = (double)f/N;
 			errorEstimate = getErrorEstimate(f, N);
 		}
-		System.out.println("--------------"+nodeAttribute+"--------------");
-		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
-		System.out.println("class Value: "+classValue);
-		System.out.println("---------------------------------------------");
-		System.out.println();
 	}
 	
 	private void calculateErrorEstimateNodeAttrCont(Instances data) {
@@ -165,11 +160,6 @@ public class treeC45 extends AbstractClassifier {
 			f = (double)f/N;
 			errorEstimate = getErrorEstimate(f, N);
 		}
-//		System.out.println("--------------"+nodeAttribute+"--------------");
-//		System.out.println("error estimate("+f+","+N+"): "+errorEstimate);
-//		System.out.println("class Value: "+classValue);
-//		System.out.println("---------------------------------------------");
-//		System.out.println();
 	}
 	
 	private double getErrorEstimate(double f, double N) {
@@ -180,7 +170,6 @@ public class treeC45 extends AbstractClassifier {
 		double temp3 = temp1 + temp2 + f;
 		double divider = 1 + (Math.pow(zErrorEstimate, 2)/N);
 		
-		//System.out.println("eE("+f+","+N+")"+temp1+"+"+temp2+"+"+f+"/"+divider);
 		return temp3/divider;
 	}
 	
@@ -189,8 +178,6 @@ public class treeC45 extends AbstractClassifier {
 		double maxInfoGain = 0.0;
 		double maxInfoGainIdx = 0.0;
 		Enumeration<Attribute> attrEnum = data.enumerateAttributes();
-//		System.out.println();
-//		System.out.println("----calculate Info Gain----");
 		while (attrEnum.hasMoreElements()) {
 			Attribute attr = (Attribute) attrEnum.nextElement();
 		    	if (attr.isNumeric()) {
@@ -201,8 +188,6 @@ public class treeC45 extends AbstractClassifier {
 		    	} else {
 		    		infoGain = countInfoGain(data, attr);
 		    	}
-//				System.out.println("===="+attr);
-//				System.out.println("gain:"+infoGain);
 			if (maxInfoGain < infoGain) {
 				maxInfoGain = infoGain;
 				maxInfoGainIdx = attr.index();
@@ -453,7 +438,7 @@ public class treeC45 extends AbstractClassifier {
 		
 		if(nodeAttribute == null) {
 			vClass.add(classValue);
-		} else {		
+		} else {
 			if (nodeAttribute.isNumeric()) {
 				if(instance.isMissing(nodeAttribute)) {
 					vClass.addAll(child[0].classifyInstanceVector(instance));
@@ -480,13 +465,13 @@ public class treeC45 extends AbstractClassifier {
 	
 	@Override
 	public double classifyInstance(Instance instance) throws Exception {
+		
 		Vector<Double> vClass = new Vector<Double>();
 		vClass = classifyInstanceVector(instance);
 		
 		Map<Double, Integer> count = new HashMap<>();
 		for(int i = 0; i < vClass.size(); i++) {
 			Double value = vClass.get(i);
-			
 			if(count.containsKey(value)) {
 				count.put(value, count.get(value) + 1);	
 			} else {
@@ -496,7 +481,6 @@ public class treeC45 extends AbstractClassifier {
 		
 		Map.Entry<Double, Integer> maxEntry = null;
 		for (Map.Entry<Double, Integer> entry : count.entrySet()) {
-			System.out.println(entry.getKey()+ " " + entry.getValue());
 		  if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
 		    maxEntry = entry;
 		  }

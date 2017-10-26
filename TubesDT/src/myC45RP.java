@@ -12,7 +12,7 @@ import java.util.Enumeration;
 import java.util.Random;
 
 public class myC45RP extends AbstractClassifier {
-	private treeC45 thisID3 = new treeC45();
+	private treeC45 thisTree = new treeC45();
 	private ArrayList<ruleC45> rules;
 	private int method = 0;
 	@Override
@@ -20,13 +20,17 @@ public class myC45RP extends AbstractClassifier {
 		data = new Instances(data);
 	    data.deleteWithMissingClass();
 	    data.randomize(new Random(1));
-	    //split data 
+	    
 		rules = new ArrayList<ruleC45>();
-		thisID3.attributeSelectionMethod(method);
-		thisID3.buildClassifier(data);
-		printTree(thisID3);
-	    translateToRules(thisID3);
+		thisTree.attributeSelectionMethod(method);
+		thisTree.buildClassifier(data);
+	    translateToRules(thisTree);
+	    //System.out.println("--------------start pruning-------------");
+	    //printRules();
 	    pruneRules(data);
+	    //System.out.println("===========================after pruning:");
+	    //printRules();
+	   
 	}
 	
 	public void setMethod(int x) {
@@ -38,7 +42,11 @@ public class myC45RP extends AbstractClassifier {
 		if (temptree.getNodeAttribute() == null) {
 			addRules(temptree);
 		} else {
-			for (int i=0; i<(temptree.getNodeAttribute()).numValues(); i++) {
+			int N = temptree.getNodeAttribute().numValues();
+			if (temptree.getNodeAttribute().isNumeric()) {
+				N = 2;
+			}
+			for (int i=0; i< N; i++) {
 				translateToRules(temptree.getChild()[i]);
 			}
 		}
@@ -50,11 +58,16 @@ public class myC45RP extends AbstractClassifier {
 		newRule.addClassValue(tree.getClassValue());
 		while(beforetree.getParent() != null) {
 			treeC45 parenttree = new treeC45(beforetree.getParent());
-			newRule.addPrecond(parenttree.getNodeAttribute(), beforetree.getIndex());
 			if (parenttree.getNodeAttribute().isNumeric()) {
-				newRule.addSplitPrecond(parenttree.getNodeAttribute(), parenttree.getSplitPoint());
+				//newRule.addSplitPrecond(i, parenttree.getSplitPoint());
+				newRule.addPrecond(parenttree.getNodeAttribute(), beforetree.getIndex(), parenttree.getSplitPoint());
+			} else {
+				newRule.addPrecond(parenttree.getNodeAttribute(), beforetree.getIndex(), -1.0);
 			}
 			beforetree = parenttree;
+			if(beforetree.getParent() != null) {
+				//System.out.println(beforetree.getParent().getNodeAttribute());
+			}
 		}
 		rules.add(newRule);
 	}
@@ -68,7 +81,7 @@ public class myC45RP extends AbstractClassifier {
 			double maxacc = rules.get(0).getAccuracy();
 			int maxi = 0;
 			for(int i=1;i<rules.size();i++) {
-				if(rules.get(i).getAccuracy()<maxacc) {
+				if(rules.get(i).getAccuracy()>maxacc) {
 					maxacc = rules.get(i).getAccuracy();
 					maxi = i;
 				}
@@ -77,7 +90,6 @@ public class myC45RP extends AbstractClassifier {
 			orderedRules.add(temp);
 		}
 		rules = new ArrayList<ruleC45>(orderedRules);
-		printRules();
 	}
 	
 	private void printRules() {
@@ -85,14 +97,15 @@ public class myC45RP extends AbstractClassifier {
 			rules.get(i).printRule();
 		}
 	}
+	
 	private void printTree(treeC45 tree) {
 		if (tree.getNodeAttribute() == null) {
 			System.out.println("["+tree.getClassValue()+"]");
 		}
 		else {
-			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]");
-			for (int i=0; i<(tree.getNodeAttribute()).numValues(); i++) {
-				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]");
+			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]    Split point: " + tree.splitPoint);
+			for (int i=0; i<(tree.getChild()).length; i++) {
+				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]" );
 				printTree(tree.getChild()[i]);
 			}
 		}
@@ -105,6 +118,6 @@ public class myC45RP extends AbstractClassifier {
 				return rules.get(i).getClassValue();
 			} 
 		}
-		return thisID3.getClassValue();
+		return thisTree.getClassValue();
 	}
 }

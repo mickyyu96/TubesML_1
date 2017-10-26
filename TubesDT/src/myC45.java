@@ -14,6 +14,9 @@ import java.util.Random;
 
 public class myC45 extends AbstractClassifier {
 	private treeC45 thisID3 = new treeC45();
+	private treeC45 maxacc_tree = null;
+	private Double maxacc = 0.0;
+	private Double accuracy = 0.0;
 	private int method = 0;
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
@@ -29,9 +32,13 @@ public class myC45 extends AbstractClassifier {
 		Instances test = new Instances(data, trainSize, testSize);
 		
 		thisID3.attributeSelectionMethod(method);
-		thisID3.buildClassifier(train);
+		thisID3.buildClassifier(data);
+		//System.out.println("--------------------------------before pruning");
 		//printTree(thisID3);
-	    thisID3 = pruneTEE(thisID3, test);
+		
+		pruneT(thisID3, test);
+		//System.out.println("--------------------------------after pruning");
+		//printTree(thisID3);
 	}
 	
 	public void setMethod(int x) {
@@ -91,24 +98,43 @@ public class myC45 extends AbstractClassifier {
 		return data;
 	}
 	
-	private treeC45 pruneT(treeC45 tree, Instances test) throws Exception {
+	private void pruningProcess(treeC45 tree, Instances test) throws Exception {
 		treeC45 temptree = new treeC45(tree);
-		
+		boolean pruned = true;
 		if (temptree.getNodeAttribute() != null) {
 			if (checkIfAllChildAreLabel(temptree)) {
 				Attribute oldattr = temptree.getNodeAttribute();
 				temptree.setNodeAttribute(null);
 				
-				if(!calculateAccuracy(temptree, test)) {
-					temptree.setNodeAttribute(oldattr);
+				Double prune_acc = calculateAccuracy(temptree, test); 
+				//System.out.println("prune acc:"+prune_acc+"> acc: "+accuracy);
+				
+				if (prune_acc > accuracy) {
+					maxacc_tree = temptree;
+					accuracy = prune_acc;
+					System.out.println(">>>>pruned!");
 				}
+				temptree.setNodeAttribute(oldattr);
 			} else {
-				for (int i=0; i<(temptree.getNodeAttribute()).numValues(); i++) {
-					temptree.setChild(pruneT(temptree.getChild()[i],test), i);
+				for (int i=0; i<(temptree.getChild().length); i++) {
+					pruningProcess(temptree.getChild()[i],test);
 				}
 			}			
 		}
-		return temptree;
+	}
+	private void pruneT(treeC45 tree, Instances test) throws Exception {
+		boolean prune = true;
+		while(prune) {
+			accuracy = calculateAccuracy(thisID3, test); 
+			pruningProcess(tree, test);
+			if (maxacc_tree != null) {
+				thisID3 =  new treeC45(getPrunedTree(maxacc_tree));
+				maxacc_tree = null;
+				tree = new treeC45(thisID3);
+			} else {
+				prune = false;
+			}
+		}
 	}
 	
 	private treeC45 pruneTEE(treeC45 tree, Instances test) throws Exception {
@@ -144,7 +170,7 @@ public class myC45 extends AbstractClassifier {
 					errorEstimateChild += (NChild/(double)temptree.getExamplesNode().size())*temptree.getChild()[i].getErrorEstimate();
 				}
 		}
-		
+	
 		System.out.println("[error estimate]"+temptree.getErrorEstimate()+" < [error estimate child]"+errorEstimateChild);
 		if (temptree.getErrorEstimate() < errorEstimateChild) {
 			temptree.setNodeAttribute(null);
@@ -153,7 +179,7 @@ public class myC45 extends AbstractClassifier {
 		return temptree;
 	}
 	
-	private boolean calculateAccuracy(treeC45 prunedTree, Instances test) throws Exception{
+	private Double calculateAccuracy(treeC45 prunedTree, Instances test) throws Exception{
 		//get complete tree
 		treeC45 aftertree = new treeC45(prunedTree);
 		while(aftertree.getParent() != null) {
@@ -161,26 +187,22 @@ public class myC45 extends AbstractClassifier {
 			parenttree.setChild(aftertree, aftertree.getIndex());
 			aftertree = parenttree;
 		}
-		
-		Evaluation eval_before = new Evaluation(test);
 		Evaluation eval_after = new Evaluation(test);
-		
-		eval_before.evaluateModel(thisID3, test);
 		eval_after.evaluateModel(aftertree, test);
-		
-		double before_accuracy = eval_before.pctCorrect();
-		double after_accuracy = eval_after.pctCorrect();
-
-//		System.out.println();
-//		System.out.println("[after:"+after_accuracy+"] >= [before:"+before_accuracy+"]");
-//		System.out.println();
-		
-		if (after_accuracy > before_accuracy) {
-			//System.out.println("pruned");
-			thisID3 = aftertree;
-			return true;
+		double accuracy = eval_after.pctCorrect();
+		return accuracy;
+	}
+	
+	private treeC45 getPrunedTree(treeC45 prunedTree) {
+		prunedTree.setNodeAttribute(null);
+		treeC45 aftertree = new treeC45(prunedTree);
+		while(aftertree.getParent() != null) {
+			treeC45 parenttree = new treeC45(aftertree.getParent());
+			parenttree.setChild(aftertree, aftertree.getIndex());
+			//System.out.println(aftertree.getNodeAttribute()+" child="+parenttree.getChild());
+			aftertree = parenttree;
 		}
-		return false;
+		return aftertree;
 	}
 	
 	private void printTree(treeC45 tree) {
@@ -188,16 +210,18 @@ public class myC45 extends AbstractClassifier {
 			System.out.println("["+tree.getClassValue()+"]");
 		}
 		else {
-			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]");
-			for (int i=0; i<(tree.getNodeAttribute()).numValues(); i++) {
-				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]");
+			System.out.println("["+tree.getNodeAttribute()+"(cv:"+tree.getClassValue()+")]    Split point: " + tree.splitPoint);
+			for (int i=0; i<(tree.getChild()).length; i++) {
+				System.out.print("["+tree.getNodeAttribute()+"-"+i+"/"+tree.getIndex()+"]" );
 				printTree(tree.getChild()[i]);
 			}
 		}
 	}
 	
 	private boolean checkIfAllChildAreLabel(treeC45 tree) {
-		for (int i=0; i<(tree.getNodeAttribute()).numValues(); i++){
+		//System.out.println("----->>>>>checking label: "+tree.getNodeAttribute()+"------");
+		for (int i=0; i<tree.getChild().length; i++){
+			//System.out.println("----->>>>>checking child: "+(tree.getChild())[i].getNodeAttribute()+"------");
 			if ((tree.getChild())[i].getNodeAttribute() != null) {
 				return false;
 			}
